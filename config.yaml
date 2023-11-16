@@ -1,0 +1,7 @@
+---
+chunk_size: 3000
+chunk_overlap: 512
+api_url: http://localhost:8000/v1
+api_key: empty
+model_identifier: jondurbin/airoboros-l2-70b-3.1.2
+max_tokens: 1000
