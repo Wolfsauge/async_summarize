@@ -1,4 +1,5 @@
 import asyncio
+import httpx
 
 # import httpx
 from icecream import ic  # type: ignore
@@ -91,5 +92,17 @@ async def get_tokenizer(my_config: dict):
 
 
 async def get_api_client(my_config: dict):
-    client = AsyncOpenAI(api_key=my_config["api_key"], base_url=my_config["api_url"])
+    my_max_keepalive_connections = int(my_config["httpx_max_keepalive_connections"])
+    my_max_connections = int(my_config["httpx_max_connections"])
+    limits = httpx.Limits(
+        max_keepalive_connections=my_max_keepalive_connections,
+        max_connections=my_max_connections,
+    )
+    timeout = httpx.Timeout(600.0, connect=60.0)
+
+    client = AsyncOpenAI(
+        api_key=my_config["api_key"],
+        base_url=my_config["api_url"],
+        http_client=httpx.AsyncClient(limits=limits, timeout=timeout),
+    )
     return client

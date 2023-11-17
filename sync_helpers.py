@@ -47,6 +47,5 @@ def get_text_splitter(my_config: dict):
 
 
 def write_output_file(output_filename: str, data: dict) -> None:
-    ic(output_filename)
     with open(output_filename, "w", encoding="utf-8") as my_fp:
         json.dump(data, my_fp)

@@ -44,9 +44,10 @@ async def main(my_args: CommandlineArguments) -> None:
     my_config = get_yaml_config("config.yaml")
 
     # Add
-    # my_config["my_httpx_client"] = await get_httpx_client(my_config)
     my_config["tokenizer"] = await get_tokenizer(my_config)
     my_config["text_splitter"] = get_text_splitter(my_config)
+    # my_config["my_httpx_client"] = await get_httpx_client(my_config)
+    # my_config["api_client"] = await get_httpx_client(my_config)
     my_config["api_client"] = await get_api_client(my_config)
 
     # Measure Begin
