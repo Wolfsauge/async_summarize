@@ -6,6 +6,24 @@ $ ./main -f file.txt
 ```
 * this script will try to summarize file.txt using the parameters defined in config.yaml
 * if the input is too long, it will be split recursively, with overlap
+* `httpx_max_connections` and `httpx_max_keepalive_connections` allow to control the number of simultaneous HTTP connections towards your API
+
+```yaml
+---
+chunk_size: 3000
+chunk_overlap: 512
+# api_url: http://localhost:8000/v1
+# api_url: http://localhost:4999/v1
+api_url: http://ultraforce:5000/v1
+api_key: empty
+# model_identifier: jondurbin/airoboros-l2-70b-3.1.2
+# model_identifier: ehartford/dolphin-2.2-70b
+model_identifier: jondurbin/airoboros-m-7b-3.1.2
+# model_identifier: TheBloke/Nous-Hermes-Llama2-70B-GPTQ
+max_tokens: 1000
+httpx_max_keepalive_connections: 1
+httpx_max_connections: 1
+```
 
 # Features
 
@@ -34,7 +52,10 @@ $ ./main -f file.txt
 * GitHub Pull Request langchain-ai [Split by Tokens instead of characters: RecursiveCharacterTextSplitter #4678
 ](https://github.com/langchain-ai/langchain/issues/4678)
 
-# Example Run
+# Example Run 1 without Tensor Parallelism
+* In this example Oobabooga text-generation webui was used, which does not implement tensor parallelism, so httpx connections is set to 1, in order to sequence the LLM requests.
+* Tokenization/client was a macBook Pro 15-inch 2018, Sonoma 14.1.1, Intel® Core™ i9-8950HK Processor, 6 core, 32 GB RAM.
+* Inference/server was a oobabooga (commit `f889302d2427c03a3c15925dd097c6213845660c`) on Windows 10, RTX 3090, Cuda 12.1.1, transformers 4.35.2.
 * Sample Text [Frankenstein; Or, The Modern Prometheus by Mary Wollstonecraft Shelley](https://www.gutenberg.org/ebooks/84)
 
 ```shell
@@ -67,4 +88,18 @@ $ jq . < pg84-analysis-jondurbin_airoboros-m-7b-3.1.2.json
 
 ## Summary Result
 
+A more readable version of this output is this:
+
 > Robert Walton, a man with extraordinary imagination embarks on a journey to the North Pole. Edward, a young man of remarkable scientific mind sails with Walton. Along the journey, they encounter harsh weather conditions the include extreme cold which causes the ship's sails to freeze. In desolation, they hear a man calling out for help and they meet a monster that is actually Frankenstein's creature. The creature tells his story, which includes his inability to find companionship and loneliness, which eventually drove him to kill. When Walton reaches the Pole he sends his remaining letters to his sister.
+
+
+# Example Run 2 with Tensor Parallelism
+
+tbd.
+
+* same model as above
+* bigger scale:
+* bigger model
+    * airoboros 3.1.2 70b
+* this requires 2x A100 (in other words >= 80 GB VRAM)
+* vllm OpenAI compatible API endpoint
