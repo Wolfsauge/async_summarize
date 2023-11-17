@@ -44,6 +44,20 @@ $ ./main -f file.txt
 * The script enables batched tokenization using Huggingface transformers fast tokenizers.
 * The tokenization computations are cpu-bound and very expensive. this feature uses batching to speed up the tokenization process, which is required for the chunk length computations inside the langchain text splitter class.
 
+### Help to get the PR running in a Python .venv quickly
+
+* using GitHub client and poetry to build and install the langchain PR #5583 directly into your async_summarize .venv
+
+```shell
+$ gh repo clone langchain-ai/langchain
+$ cd langchain
+$ gh pr checkout 5583
+$ cd langchain/libs/langchain
+$ ln -sf <the .venv of your async_summarize> .venv
+$ poetry build
+$ poetry install
+```
+
 ### References
 * Huggingface NLP Course, [Chapter: Fast tokenizers' special powers
 ](https://huggingface.co/learn/nlp-course/chapter6/3#fast-tokenizers-special-powers)
