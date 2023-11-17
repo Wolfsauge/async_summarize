@@ -61,9 +61,9 @@ $ poetry install
 ### References
 * Huggingface NLP Course, [Chapter: Fast tokenizers' special powers
 ](https://huggingface.co/learn/nlp-course/chapter6/3#fast-tokenizers-special-powers)
-* GitHub Issue langchain-ai [Batched length functions for text splitters #5583
+* GitHub Pull Request langchain-ai [Batched length functions for text splitters #5583
 ](https://github.com/langchain-ai/langchain/pull/5583)
-* GitHub Pull Request langchain-ai [Split by Tokens instead of characters: RecursiveCharacterTextSplitter #4678
+* GitHub Issue langchain-ai [Split by Tokens instead of characters: RecursiveCharacterTextSplitter #4678
 ](https://github.com/langchain-ai/langchain/issues/4678)
 
 # Example Run 1 without Tensor Parallelism
