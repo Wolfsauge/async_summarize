@@ -45,31 +45,31 @@ async def main(my_args: CommandlineArguments) -> None:
     # Read input file
     sample_text = await get_file_contents(my_args.file)
 
-    # Initialize my_config buck slip dict
-    my_config = get_yaml_config("config.yaml")
-    ic(my_config)
+    # Initialize buck_slip dict
+    buck_slip = get_yaml_config("config.yaml")
+    ic(buck_slip)
 
     # Determine output file name
-    output_filename = get_output_filename(input_filename, my_config)
+    output_filename = get_output_filename(input_filename, buck_slip)
     ic(output_filename)
 
     # Enable fast tokenizer
-    tokenizer = await get_tokenizer(my_config)
+    tokenizer = await get_tokenizer(buck_slip)
     encoding = tokenizer("My name is Sylvain and I work at Hugging Face in Brooklyn.")
     ic(tokenizer.is_fast)
     ic(encoding.is_fast)
     if tokenizer.is_fast is not True or encoding.is_fast is not True:
         sys.exit(1)
-    my_config["tokenizer"] = tokenizer
-    ic(type(my_config["tokenizer"]))
+    buck_slip["tokenizer"] = tokenizer
+    ic(type(buck_slip["tokenizer"]))
 
     # Enable text splitter
-    my_config["text_splitter"] = get_text_splitter(my_config)
-    ic(type(my_config["text_splitter"]))
+    buck_slip["text_splitter"] = get_text_splitter(buck_slip)
+    ic(type(buck_slip["text_splitter"]))
 
     # Enable OpenAI-compatible API
-    my_config["api_client"] = await get_api_client(my_config)
-    ic(type(my_config["api_client"]))
+    buck_slip["api_client"] = await get_api_client(buck_slip)
+    ic(type(buck_slip["api_client"]))
 
     ic("Init complete.")
 
@@ -79,7 +79,7 @@ async def main(my_args: CommandlineArguments) -> None:
     # Enter recursion
     result = {}
     depth = 0
-    result["summary"] = await enter_recursion(sample_text, depth, my_config)
+    result["summary"] = await enter_recursion(sample_text, depth, buck_slip)
 
     # Measure ending of recursive summarization
     time_t1 = perf_counter()
@@ -87,15 +87,15 @@ async def main(my_args: CommandlineArguments) -> None:
     duration = f"{time_delta:.2f} seconds"
 
     # Shutdown httpx AsyncClient
-    # await my_config["my_httpx_client"].aclose()
+    # await buck_slip["my_httpx_client"].aclose()
 
     # Create result dictionary entries
     result["duration"] = duration
-    result["model_identifier"] = my_config["model_identifier"]
-    result["chunk_size"] = my_config["chunk_size"]
-    result["chunk_overlap"] = my_config["chunk_overlap"]
-    result["max_tokens"] = my_config["max_tokens"]
-    result["api_url"] = my_config["api_url"]
+    result["model_identifier"] = buck_slip["model_identifier"]
+    result["chunk_size"] = buck_slip["chunk_size"]
+    result["chunk_overlap"] = buck_slip["chunk_overlap"]
+    result["max_tokens"] = buck_slip["max_tokens"]
+    result["api_url"] = buck_slip["api_url"]
 
     # Peek at result
     ic(result)
