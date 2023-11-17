@@ -1,5 +1,8 @@
-import yaml
+import os
+import re
 import json
+import yaml
+
 from icecream import ic  # type: ignore
 
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -51,6 +54,15 @@ def get_text_splitter(my_config: dict):
     )
 
     return my_text_splitter
+
+
+def get_output_filename(my_input_filename: str, my_config: dict) -> str:
+    my_local_identifier = my_config["model_local_identifier"]
+    replacement = f"-analysis-{my_local_identifier}.json"
+    my_output_filename = os.path.basename(my_input_filename)
+    my_output_filename = re.sub("\\.txt$", replacement, my_output_filename)
+
+    return my_output_filename
 
 
 def write_output_file(output_filename: str, data: dict) -> None:
