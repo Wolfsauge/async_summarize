@@ -36,13 +36,20 @@ def get_length_of_chunk_in_tokens(my_chunk: str, my_config: dict) -> int:
 
 
 def get_text_splitter(my_config: dict):
-    my_text_splitter = RecursiveCharacterTextSplitter(
-        separators=["\n\n", "\n", "."],
+    # my_text_splitter = RecursiveCharacterTextSplitter(
+    #     separators=["\n\n", "\n", "."],
+    #     chunk_size=my_config["chunk_size"],
+    #     chunk_overlap=my_config["chunk_overlap"],
+    #     length_function=lambda x: get_length_of_chunk_in_tokens(x, my_config),
+    #     is_separator_regex=False,
+    # )
+
+    my_text_splitter = RecursiveCharacterTextSplitter.from_huggingface_tokenizer(
+        tokenizer=my_config["tokenizer"],
         chunk_size=my_config["chunk_size"],
         chunk_overlap=my_config["chunk_overlap"],
-        length_function=lambda x: get_length_of_chunk_in_tokens(x, my_config),
-        is_separator_regex=False,
     )
+
     return my_text_splitter
 
 
