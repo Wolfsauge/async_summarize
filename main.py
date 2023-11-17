@@ -38,20 +38,8 @@ async def main(my_args: CommandlineArguments) -> None:
     duration: str
     result: dict
 
-    # Determine input file name
-    input_filename = my_args.file
-    ic(input_filename)
-
-    # Read input file
-    sample_text = await get_file_contents(my_args.file)
-
     # Initialize buck_slip dict
     buck_slip = get_yaml_config("config.yaml")
-    ic(buck_slip)
-
-    # Determine output file name
-    output_filename = get_output_filename(input_filename, buck_slip)
-    ic(output_filename)
 
     # Enable fast tokenizer
     tokenizer = await get_tokenizer(buck_slip)
@@ -70,6 +58,18 @@ async def main(my_args: CommandlineArguments) -> None:
     # Enable OpenAI-compatible API
     buck_slip["api_client"] = await get_api_client(buck_slip)
     ic(type(buck_slip["api_client"]))
+
+    # Determine input file name
+    input_filename = my_args.file
+    ic(input_filename)
+
+    # Read input file
+    sample_text = await get_file_contents(my_args.file)
+    ic(len(sample_text))
+
+    # Determine output file name
+    output_filename = get_output_filename(input_filename, buck_slip)
+    ic(output_filename)
 
     ic("Init complete.")
 
