@@ -15,6 +15,7 @@ from sync_helpers import (
     get_output_filename,
     get_text_splitter,
     write_output_file,
+    update_result,
 )
 
 from async_helpers import (
@@ -71,31 +72,25 @@ async def main(my_args: CommandlineArguments) -> None:
     output_filename = get_output_filename(input_filename, buck_slip)
     ic(output_filename)
 
+    # Initialize runtime variables
+    result = {}
+    recursion_depth = 0
     ic("Init complete.")
 
     # Measure beginning of recursive summarization
     time_t0 = perf_counter()
 
     # Enter recursion
-    result = {}
-    depth = 0
-    result["summary"] = await enter_recursion(sample_text, depth, buck_slip)
+    result["summary"] = await enter_recursion(sample_text, recursion_depth, buck_slip)
 
     # Measure ending of recursive summarization
     time_t1 = perf_counter()
     time_delta = time_t1 - time_t0
     duration = f"{time_delta:.2f} seconds"
 
-    # Shutdown httpx AsyncClient
-    # await buck_slip["my_httpx_client"].aclose()
-
-    # Create result dictionary entries
+    # Augment result dictionary
     result["duration"] = duration
-    result["model_identifier"] = buck_slip["model_identifier"]
-    result["chunk_size"] = buck_slip["chunk_size"]
-    result["chunk_overlap"] = buck_slip["chunk_overlap"]
-    result["max_tokens"] = buck_slip["max_tokens"]
-    result["api_url"] = buck_slip["api_url"]
+    result = update_result(result, buck_slip)
 
     # Peek at result
     ic(result)

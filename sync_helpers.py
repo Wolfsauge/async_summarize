@@ -4,8 +4,7 @@ import json
 import yaml
 
 from icecream import ic  # type: ignore
-
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.text_splitter import RecursiveCharacterTextSplitter, TextSplitter
 
 
 def get_yaml_config(buck_slip_filename: str) -> dict:
@@ -38,7 +37,7 @@ def get_length_of_chunk_in_tokens(my_chunk: str, buck_slip: dict) -> int:
     return len(my_input_ids)
 
 
-def get_text_splitter(buck_slip: dict) -> RecursiveCharacterTextSplitter:
+def get_text_splitter(buck_slip: dict) -> TextSplitter:
     # my_text_splitter = RecursiveCharacterTextSplitter(
     #     separators=["\n\n", "\n", "."],
     #     chunk_size=buck_slip["chunk_size"],
@@ -68,3 +67,13 @@ def get_output_filename(my_input_filename: str, buck_slip: dict) -> str:
 def write_output_file(output_filename: str, data: dict) -> None:
     with open(output_filename, "w", encoding="utf-8") as my_fp:
         json.dump(data, my_fp)
+
+
+def update_result(result: dict, buck_slip: dict) -> dict:
+    result["model_identifier"] = buck_slip["model_identifier"]
+    result["chunk_size"] = buck_slip["chunk_size"]
+    result["chunk_overlap"] = buck_slip["chunk_overlap"]
+    result["max_tokens"] = buck_slip["max_tokens"]
+    result["api_url"] = buck_slip["api_url"]
+
+    return result
