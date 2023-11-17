@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "async-summarize"
+version = "0.1.0"
+description = "An asynchronous summarization script."
+authors = ["Wolfsauge <no@email>"]
+license = "MIT"
+readme = ["README.md", "LICENSE"]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+httpx = "^0.25.1"
+icecream = "^2.1.3"
+transformers = "^4.35.2"
+openai = "^1.3.2"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
