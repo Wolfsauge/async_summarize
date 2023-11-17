@@ -1,17 +1,11 @@
 import asyncio
 import httpx
 
-# import httpx
 from icecream import ic  # type: ignore
-
-from transformers import AutoTokenizer  # type: ignore
+from transformers import AutoTokenizer, LlamaTokenizerFast  # type: ignore
 from openai import AsyncOpenAI
 
 from sync_helpers import get_length_of_chunk_in_tokens
-
-JSON = int | str | float | bool | None | dict[str, "JSON"] | list["JSON"]
-JSONObject = dict[str, JSON]
-JSONList = list[JSON]
 
 
 async def get_result(my_chunk: str, my_config: dict) -> str:
@@ -93,14 +87,14 @@ async def get_file_contents(my_filename: str) -> str:
         return my_fp.read()
 
 
-async def get_tokenizer(my_config: dict):
+async def get_tokenizer(my_config: dict) -> LlamaTokenizerFast:
     my_tokenizer = AutoTokenizer.from_pretrained(
         my_config["model_identifier"], use_fast=True
     )
     return my_tokenizer
 
 
-async def get_api_client(my_config: dict):
+async def get_api_client(my_config: dict) -> AsyncOpenAI:
     my_max_keepalive_connections = int(my_config["httpx_max_keepalive_connections"])
     my_max_connections = int(my_config["httpx_max_connections"])
     limits = httpx.Limits(

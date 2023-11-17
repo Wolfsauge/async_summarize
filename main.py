@@ -12,21 +12,20 @@ from icecream import ic  # type: ignore
 
 from sync_helpers import (
     get_yaml_config,
+    get_output_filename,
     get_text_splitter,
     write_output_file,
-    get_output_filename,
 )
 
 from async_helpers import (
-    # get_httpx_client,
-    enter_recursion,
     get_file_contents,
     get_tokenizer,
     get_api_client,
+    enter_recursion,
 )
 
 
-# command line dataclass
+# Dataclass for commandline arguments
 @dataclass
 class CommandlineArguments:
     file: str
@@ -48,6 +47,7 @@ async def main(my_args: CommandlineArguments) -> None:
 
     # Initialize my_config buck slip dict
     my_config = get_yaml_config("config.yaml")
+    ic(my_config)
 
     # Determine output file name
     output_filename = get_output_filename(input_filename, my_config)
@@ -56,18 +56,22 @@ async def main(my_args: CommandlineArguments) -> None:
     # Enable fast tokenizer
     tokenizer = await get_tokenizer(my_config)
     encoding = tokenizer("My name is Sylvain and I work at Hugging Face in Brooklyn.")
-    ic(type(tokenizer))
     ic(tokenizer.is_fast)
     ic(encoding.is_fast)
     if tokenizer.is_fast is not True or encoding.is_fast is not True:
         sys.exit(1)
     my_config["tokenizer"] = tokenizer
+    ic(type(my_config["tokenizer"]))
 
     # Enable text splitter
     my_config["text_splitter"] = get_text_splitter(my_config)
+    ic(type(my_config["text_splitter"]))
 
     # Enable OpenAI-compatible API
     my_config["api_client"] = await get_api_client(my_config)
+    ic(type(my_config["api_client"]))
+
+    ic("Init complete.")
 
     # Measure beginning of recursive summarization
     time_t0 = perf_counter()

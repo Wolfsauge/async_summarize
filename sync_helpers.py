@@ -38,7 +38,7 @@ def get_length_of_chunk_in_tokens(my_chunk: str, my_config: dict) -> int:
     return len(my_input_ids)
 
 
-def get_text_splitter(my_config: dict):
+def get_text_splitter(my_config: dict) -> RecursiveCharacterTextSplitter:
     # my_text_splitter = RecursiveCharacterTextSplitter(
     #     separators=["\n\n", "\n", "."],
     #     chunk_size=my_config["chunk_size"],
