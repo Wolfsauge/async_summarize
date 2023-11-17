@@ -28,7 +28,7 @@ httpx_max_connections: 1
 # Features
 
 ## Tokenizer Parallelism
-* The script enables tokenizer parallelism using Huggingface transformers fast tokenizers.
+* The script enables Rust-based tokenizer parallelism by using Huggingface transformers fast tokenizers.
 * To do so, the script is written with respect to the needs of tokenizer parallelism and is meant to be safe to run with `TOKENIZERS_PARALLELISM` set to `true`.
 
 ### Example
@@ -39,6 +39,7 @@ $ ./main -f file.txt
 
 ### References
 * GitHub transformers Issue [Tokenizers throwing warning "The current process just got forked, Disabling parallelism to avoid deadlocks.. To disable this warning, please explicitly set TOKENIZERS_PARALLELISM=(true | false)" #5486](https://github.com/huggingface/transformers/issues/5486#issuecomment-654232343)
+* Stack Overflow, [How to disable TOKENIZERS_PARALLELISM=(true | false) warning?](https://stackoverflow.com/questions/62691279/how-to-disable-tokenizers-parallelism-true-false-warning/72926996#72926996), written Jul 10, 2022
 
 ## Batched Tokenization
 * The script enables batched tokenization using Huggingface transformers fast tokenizers.
