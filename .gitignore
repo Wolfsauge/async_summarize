@@ -161,4 +161,6 @@ cython_debug/
 
 # Temporary work files
 *.txt
+*.txt~
 *.json
+*.json~

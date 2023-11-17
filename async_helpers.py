@@ -22,11 +22,20 @@ async def get_result(my_chunk: str, my_config: dict) -> str:
     # Summarize the input in about 130 words.
     # ENDINSTRUCTION
     # """
+
+    #     my_prompt = f"""BEGININPUT
+    # {my_chunk}
+    # ENDINPUT
+    # BEGININSTRUCTION
+    # Summarize the input in about 130 words, focusing on characters, actions and events. Infer the appearance and personality of the characters involved in a few sentences, if they are mentioned in the text. Write confidently even if character qualities are vague or poorly-defined. Keep your response in one paragraph.
+    # ENDINSTRUCTION
+    # """
+
     my_prompt = f"""BEGININPUT
 {my_chunk}
 ENDINPUT
 BEGININSTRUCTION
-Summarize the input in about 130 words, focusing on characters, actions and events. Infer the appearance and personality of the characters involved in a few sentences, if they are mentioned in the text. Write confidently even if character qualities are vague or poorly-defined. Keep your response in one paragraph.
+Summarize the input in about 130 words, focusing on characters, actions and events. Infer the scene description, the appearance and personality of the characters involved and write confidently and leave everything out, which is not well defined in the input. Keep your response in one paragraph.
 ENDINSTRUCTION
 """
 
