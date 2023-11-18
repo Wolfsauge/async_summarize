@@ -3,14 +3,36 @@
 # async_summarize
 An asynchronous summarization script.
 
-```shell
-$ ./main -f file.txt
-```
-* this script will try to summarize file.txt using the parameters defined in config.yaml
-* if the input is too long, it will be split recursively, with overlap
-* `httpx_max_connections` and `httpx_max_keepalive_connections` allow to control the number of simultaneous HTTP connections towards your API
+This script will attempt to summarize file.txt using the parameters defined in config.yaml and prompt.yaml.
 
+If the input is too long, it will be split recursively, with overlap using [LangChain](https://www.langchain.com).
+
+The LangChain text splitter class leverages Huggingface transformers fast tokenizer and batched tokenization features to improve performance. It maintaints compatibility with the OpenAI API.
+
+The httpx `httpx_max_connections` and `httpx_max_keepalive_connections` parameters allow to control the number of simultaneous HTTP connections towards the API.
+
+# Approach
+
+This script uses the _hierarchical merging_ approach, similar to the descriptions in the paper "BooookScore: A systematic exploration of book-length summarization in the era of LLMs" by Yapei Chang, Kyle Lo, Tanya Goyal, Mohit Iyyer, [PDF](https://arxiv.org/pdf/2310.00785.pdf). The following figure, from page 3 of this paper, shows the main steps of the algorithm (1).
+
+![Figure 1](images/figure-1.png)
+
+## Please note
+- At the time of writing, `async_summarize` uses _the same_ prompt for the summarizing **and** for the merging steps.
+- At the time of writing, `async_summarize` implements the hierarchical merging approach _only_. The _incremental updating_ approach is still to be implemented.
+
+## Example Call
+```shell
+$ export TOKENIZERS_PARALLELISM=true
+$ poetry run ./main.py \
+    -c config.yaml \
+    -p prompt.yaml \
+    -f file.txt
+```
+
+### Example config.yaml
 ```yaml
+$ cat config.yaml
 ---
 httpx_max_keepalive_connections: 1
 httpx_max_connections: 1
@@ -19,24 +41,35 @@ use_batched_tokenization: true
 chunk_size: 3000
 chunk_overlap: 512
 # api_url: http://localhost:4999/v1
-api_url: http://ultraforce:5000/v1
-# api_url: http://localhost:8000/v1
+# api_url: http://somehost:5000/v1
+api_url: http://localhost:8000/v1
 api_key: empty
 model_identifier: jondurbin/airoboros-m-7b-3.1.2
 max_tokens: 1000
 temperature: 0.2
 ```
 
+### Example prompt.yaml
+```yaml
+$ cat prompt.yaml
+prompt_template: |-
+  BEGININPUT
+  {{ prompt }}
+  ENDINPUT
+  BEGININSTRUCTION
+  Summarize the input in about 130 words.
+  ENDINSTRUCTION
+```
+
 # Features
 
 ## Tokenizer Parallelism
-* The script enables Rust-based tokenizer parallelism by using Huggingface transformers fast tokenizers.
-* To do so, the script is written with respect to the needs of tokenizer parallelism and is meant to be safe to run with `TOKENIZERS_PARALLELISM` set to `true`.
+The script enables Rust-based tokenizer parallelism by using Huggingface transformers fast tokenizers. The script is written with respect to the needs of tokenizer parallelism and is meant to be safe to run with `TOKENIZERS_PARALLELISM` set to `true`.
 
 ### Example
 ```shell
 $ export TOKENIZERS_PARALLELISM=true
-$ ./main -f file.txt
+...
 ```
 
 ### References
@@ -446,35 +479,8 @@ pped: 0 reqs, Pending: 0 reqs, GPU KV cache usage: 78.3%, CPU KV cache
 ## Observations
 * peak peformance occured during times, when no pending requests or swapped out requests were present
 
-# Error Case
-
-* RunPod Pytorch 2.0.1 (runpod/pytorch:2.0.1-py3.10-cuda11.8.0-devel-ubuntu22.04)
-    * On-Demand - Secure Cloud
-    * 3x A40 = 144 GB VRAM
-    * 28 vCPU 150 GB RAM
-    * 20 GB Disk, 200 GB Encrypted Pod Volume, Volume Path: /workspace
-
-![Runpod](images/runpod-3-gpu.png)
-
-```shell
-$ nohup python \
-    -m vllm.entrypoints.openai.api_server \
-    --model jondurbin_airoboros-l2-70b-3.1.2 \
-    --tensor-parallel-size 3
-```
-
-This model cannot be run using three GPUs, because it has 64 attention heads.
-
-```shell
-root@dc05862d8078:/workspace# tail -f nohup.out
-    self.engine = self._init_engine(*args, **kwargs)
-  File "/usr/local/lib/python3.10/dist-packages/vllm/engine/async_llm_engine.py", line 306, in _init_engine
-    return engine_class(*args, **kwargs)
-  File "/usr/local/lib/python3.10/dist-packages/vllm/engine/llm_engine.py", line 96, in __init__
-    self._verify_args()
-  File "/usr/local/lib/python3.10/dist-packages/vllm/engine/llm_engine.py", line 187, in _verify_args
-    self.model_config.verify_with_parallel_config(self.parallel_config)
-  File "/usr/local/lib/python3.10/dist-packages/vllm/config.py", line 123, in verify_with_parallel_config
-    raise ValueError(
-ValueError: Total number of attention heads (64) must be divisible by tensor parallel size (3).
-```
+## Notes
+* this is a small hobbyist project, don't use this in production!
+* no error handling
+* no logging
+* no pytest
