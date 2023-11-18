@@ -76,7 +76,9 @@ $ export TOKENIZERS_PARALLELISM=true
 
 ## Batched Tokenization
 * The script enables batched tokenization using Huggingface transformers fast tokenizers.
-* The tokenization computations are cpu-bound and very expensive. this feature uses batching to speed up the tokenization process, which is required for the chunk length computations inside the langchain text splitter class.
+* The tokenization computations are cpu-bound and computationally expensive.
+* Batched tokenization happens locally on the inference client.
+* The repeated, expensive tokenization steps are required for the chunk length computations inside the langchain text splitter class.
 
 ### Help to get the PR running in a Python .venv quickly
 
