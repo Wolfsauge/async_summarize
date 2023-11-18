@@ -166,12 +166,15 @@ A more readable version of this output is this:
 
 To do a test with tensor parallelism, the following method can be used.
 
-* RunPod Pytorch 2.0.1 (runpod/pytorch:2.0.1-py3.10-cuda11.8.0-devel-ubuntu22.04)
-    * On-Demand - Secure Cloud
-    * 2x A100 = 160 GB VRAM
-    * 16 vCPU 377 GB RAM
-    * 20 GB Disk, 200 GB Encrypted Pod Volume, Volume Path: /workspace
-* [vLLM](https://vllm.ai/) 0.2.1.post1
+* RunPod
+    * RunPod product: "On-Demand - Secure Cloud"
+    * template: "Pytorch 2.0.1 (runpod/pytorch:2.0.1-py3.10-cuda11.8.0-devel-ubuntu22.04)"
+    * gpus: 2x A100 80 GB GPU -> 160 GB VRAM
+    * cpu/ram: 16 vCPU, 377 GB RAM
+    * disk setup: 20 GB Disk, 200 GB Encrypted Pod Volume, Volume Path: /workspace
+        * this needs an override on the disk, to have enough space to store the model
+    * [vLLM](https://vllm.ai/) 0.2.1.post1
+        * read their documentation [Welcome to vLLM!](https://vllm.readthedocs.io/en/latest/)
 
 ![Runpod](images/runpod-2-gpu.png)
 
@@ -295,6 +298,92 @@ Sat Nov 18 05:33:40 2023
 |=======================================================================================|
 +---------------------------------------------------------------------------------------+
 ```
+
+Now it's the time to do some inference.
+
+```yaml
+---
+httpx_max_keepalive_connections: 5
+httpx_max_connections: 20
+use_fast: true
+use_batched_tokenization: true
+chunk_size: 3000
+chunk_overlap: 512
+api_url: http://localhost:8000/v1
+api_key: empty
+model_identifier: jondurbin/airoboros-l2-70b-3.1.2
+max_tokens: 1000
+temperature: 0.2
+```
+
+Using the API via SSH tunnel.
+
+The following aspects were skipped/not tested for or did not occur in this experiment:
+
+* SSH ControlMaster setup
+* making the SSH connection more robust
+* using/validating httpx.Retry() in case of network failure
+* using an exposed port instead / protecting the port with a X.509 cert / validating X.509 API in client
+* validating/recording completion API response
+
+```shell
+$ ssh -ag root@213.173.105.10 -p 21539 -L 8000:127.0.0.1:8000
+```
+
+Example script:
+```bash
+#!/usr/bin/env bash
+
+for i in $(cat todo)
+do
+    poetry run ./main.py \
+        -c config-runpod-2xA100-jondurbin_airoboros-l2-70b-3.1.2.yaml \
+        -p prompt-airoboros-default-summarize-130.yaml \
+        -f $i
+
+    poetry run ./main.py \
+        -c config-runpod-2xA100-jondurbin_airoboros-l2-70b-3.1.2.yaml \
+        -p prompt-airoboros-extended-summarize-130.yaml \
+        -f $i
+done
+```
+
+Once your script has finished, do not forget to copy the nohup.out file. Searching through the nohup.out file finds things.
+
+```shell
+$ grep Avg nohup.out|awk '{print $8}'|sort -n|tail -n1
+3221.1
+```
+
+Finding **peak prompt throughput**:
+
+```shell
+$ grep 3221.1 nohup.out
+INFO 11-18 05:57:31 llm_engine.py:624] Avg prompt throughput: 3221.1 t
+okens/s, Avg generation throughput: 65.5 tokens/s, Running: 14 reqs, S
+wapped: 0 reqs, Pending: 0 reqs, GPU KV cache usage: 98.9%, CPU KV cac
+he usage: 0.0%
+```
+
+Looking into the nohup.out file again.
+
+```shell
+$ grep Avg nohup.out|awk '{print $13}'|sort -n|tail -n1
+156.8
+```
+
+Finding **peak generation throughput**:
+
+```shell
+$ grep 156.8 nohup.out
+INFO 11-18 05:59:09 llm_engine.py:624] Avg prompt throughput: 0.0 toke
+ns/s, Avg generation throughput: 156.8 tokens/s, Running: 15 reqs, Swa
+pped: 0 reqs, Pending: 0 reqs, GPU KV cache usage: 78.3%, CPU KV cache
+ usage: 0.0%
+```
+
+## Observations
+* peak perormance occured during times, when no pending requests or swapped out requests were present
 
 # Error Case
 

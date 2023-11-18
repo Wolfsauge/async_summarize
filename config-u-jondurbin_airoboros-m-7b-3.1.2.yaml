@@ -5,9 +5,7 @@ use_fast: true
 use_batched_tokenization: true
 chunk_size: 3000
 chunk_overlap: 512
-# api_url: http://localhost:4999/v1
 api_url: http://ultraforce:5000/v1
-# api_url: http://localhost:8000/v1
 api_key: empty
 model_identifier: jondurbin/airoboros-m-7b-3.1.2
 max_tokens: 1000
