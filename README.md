@@ -10,21 +10,19 @@ $ ./main -f file.txt
 
 ```yaml
 ---
-chunk_size: 3000
-chunk_overlap: 512
-# api_url: http://localhost:8000/v1
-# api_url: http://localhost:4999/v1
-api_url: http://ultraforce:5000/v1
-api_key: empty
-# model_identifier: jondurbin/airoboros-l2-70b-3.1.2
-model_identifier: jondurbin/airoboros-m-7b-3.1.2
-# model_identifier: ehartford/dolphin-2.2-70b
-# model_identifier: TheBloke/Nous-Hermes-Llama2-70B-GPTQ
-max_tokens: 1000
 httpx_max_keepalive_connections: 1
 httpx_max_connections: 1
 use_fast: true
 use_batched_tokenization: true
+chunk_size: 3000
+chunk_overlap: 512
+# api_url: http://localhost:4999/v1
+api_url: http://ultraforce:5000/v1
+# api_url: http://localhost:8000/v1
+api_key: empty
+model_identifier: jondurbin/airoboros-m-7b-3.1.2
+max_tokens: 1000
+temperature: 0.2
 ```
 
 # Features
@@ -76,8 +74,10 @@ $ poetry install
 * Sample Text [Frankenstein; Or, The Modern Prometheus by Mary Wollstonecraft Shelley](https://www.gutenberg.org/ebooks/84)
 
 ```text
-$ poetry run ./main.py -f pg84.txt
+$ poetry run ./main.py -c config-jondurbin_airoboros-m-7b-3.1.2.yaml -p prompt-airoboros-default-summarize-130.yaml -f pg84.txt
 None of PyTorch, TensorFlow >= 2.0, or Flax have been found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
+ic| buck_slip_filename: 'config-jondurbin_airoboros-m-7b-3.1.2.yaml'
+Reading... ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 351/351 bytes 0:00:00
 ic| buck_slip: {'api_key': 'empty',
                 'api_url': 'http://ultraforce:5000/v1',
                 'chunk_overlap': 512,
@@ -86,8 +86,22 @@ ic| buck_slip: {'api_key': 'empty',
                 'httpx_max_keepalive_connections': 1,
                 'max_tokens': 1000,
                 'model_identifier': 'jondurbin/airoboros-m-7b-3.1.2',
+                'temperature': 0.2,
                 'use_batched_tokenization': True,
                 'use_fast': True}
+ic| prompt_template_filename: 'prompt-airoboros-default-summarize-130.yaml'
+Reading... ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 137/137 bytes 0:00:00
+ic| prompt_template: ('BEGININPUT
+                     '
+                      '{{ prompt }}
+                     '
+                      'ENDINPUT
+                     '
+                      'BEGININSTRUCTION
+                     '
+                      'Summarize the input in about 130 words.
+                     '
+                      'ENDINSTRUCTION')
 ic| type(tokenizer): <class 'transformers.models.llama.tokenization_llama_fast.LlamaTokenizerFast'>
 ic| tokenizer.is_fast: True
 ic| type(encoding): <class 'transformers.tokenization_utils_base.BatchEncoding'>
@@ -96,7 +110,9 @@ ic| type(text_splitter): <class 'langchain.text_splitter.RecursiveCharacterTextS
 ic| batched_tokenization: True
 ic| type(api_client): <class 'openai.AsyncOpenAI'>
 ic| input_filename: 'pg84.txt'
-ic| output_filename: 'pg84-analysis-jondurbin_airoboros-m-7b-3.1.2.json'
+Reading... ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 449.0/449.0 kB 0:00:00
+ic| len(sample_text): 438838
+ic| output_filename: 'pg84-analysis-jondurbin_airoboros-m-7b-3.1.2-0000.json'
 ic| 'Init complete.'
 ic| recursion_depth: 1
 ic| len(chunks): 47
