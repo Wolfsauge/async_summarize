@@ -18,7 +18,7 @@ def get_yaml_config(buck_slip_filename: str) -> dict:
     try:
         with open(buck_slip_filename, "r", encoding="utf-8") as file:
             buck_slip = yaml.safe_load(file)
-        ic(len(buck_slip))
+        ic(buck_slip)
 
     except (IOError, OSError) as my_exception:
         warning_message = f"{my_exception}"
