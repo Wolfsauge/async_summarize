@@ -5,7 +5,7 @@ An asynchronous summarization script.
 
 This script summarizes the input file using a large language model API. If the input exceeds the context of the LLM, it will be split using the [LangChain](https://www.langchain.com) [RecursiveTextSplitter](https://python.langchain.com/docs/modules/data_connection/document_transformers/text_splitters/recursive_text_splitter) class.
 
-The LangChain text splitter class leverages Huggingface transformers [PretrainedTokenizerFast](https://huggingface.co/docs/transformers/fast_tokenizers) and batched tokenization features.
+The LangChain text splitter class uses Huggingface transformers [PretrainedTokenizerFast](https://huggingface.co/docs/transformers/fast_tokenizers) and batched tokenization.
 
 The Python [httpx](https://www.python-httpx.org/) module manages the concurrency towards the API via the `httpx_max_connections` and `httpx_max_keepalive_connections` parameters and the [OpenAI Python Library](https://github.com/openai/openai-python/).
 
