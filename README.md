@@ -17,8 +17,7 @@ This script uses the _hierarchical merging_ approach, similar to the description
 
 ## Please note
 At the time of writing:
-- `async_summarize` uses _the same_ prompt for the summarizing **and** for the merging steps.
-- `async_summarize` implements __only a simplified version__ of the the hierarchical merging approach
+- `async_summarize` uses _the same_ prompt for the summarizing **and** for the merging steps and implements __only a simplified version__ of the the hierarchical merging approach (the hierarchical merging algorithm uses three distinct steps and different prompts to achieve the result, see the PDF linked above for more details)
 - the _incremental updating_ approach is still to be implemented
 
 
