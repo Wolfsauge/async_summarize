@@ -57,13 +57,10 @@ async def main(my_args: CommandlineArguments) -> None:
     ic(input_filename)
 
     # Read input file
-    sample_text = await get_file_contents(my_args.file)
-    buck_slip["length_of_sample_text_in_characters"] = len(sample_text)
-    # ic(buck_slip["length_of_sample_text_in_characters"])
+    sample_text = await get_file_contents(my_args.file, buck_slip)
 
     # Determine output file name
     output_filename = get_output_filename(input_filename, buck_slip)
-    ic(output_filename)
 
     # Initialize runtime variables
     result = {}

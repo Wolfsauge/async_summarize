@@ -84,9 +84,14 @@ async def enter_recursion(my_chunk: str, recursion_depth: int, buck_slip: dict) 
     return my_result
 
 
-async def get_file_contents(my_filename: str) -> str:
+async def get_file_contents(my_filename: str, buck_slip: dict) -> str:
     with open(my_filename, "r", encoding="utf-8") as my_fp:
-        return my_fp.read()
+        sample_text = my_fp.read()
+    buck_slip["length_of_sample_text_in_characters"] = len(sample_text)
+    ic(len(sample_text))
+    ic(my_fp)
+
+    return sample_text
 
 
 async def get_tokenizer(buck_slip: dict) -> LlamaTokenizerFast:

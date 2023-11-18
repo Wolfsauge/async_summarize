@@ -1,4 +1,5 @@
 import os
+import sys
 import re
 import json
 import yaml
@@ -61,10 +62,25 @@ def get_text_splitter(buck_slip: dict) -> TextSplitter:
 
 
 def get_output_filename(my_input_filename: str, buck_slip: dict) -> str:
-    my_local_identifier = buck_slip["model_local_identifier"]
-    replacement = f"-analysis-{my_local_identifier}.json"
-    output_filename = os.path.basename(my_input_filename)
-    output_filename = re.sub("\\.txt$", replacement, output_filename)
+    my_index = 0
+    does_exist = False
+    while my_index < 1000:
+        my_index_str = f"{my_index:04d}"
+        my_local_identifier = buck_slip["model_local_identifier"]
+        replacement = f"-analysis-{my_local_identifier}-{my_index_str}.json"
+        output_filename = os.path.basename(my_input_filename)
+        output_filename = re.sub("\\.txt$", replacement, output_filename)
+        does_exist = os.path.exists(output_filename)
+        if does_exist is True:
+            my_index += 1
+        else:
+            break
+
+    if does_exist is True:
+        ic("ERROR: Can't find output filename.")
+        sys.exit(1)
+
+    ic(output_filename)
 
     return output_filename
 
