@@ -166,9 +166,9 @@ A more readable version of this output is this:
 
 To do a test with tensor parallelism, the following method can be used.
 
-* RunPod
-    * RunPod product: "On-Demand - Secure Cloud"
-    * template: "Pytorch 2.0.1 (runpod/pytorch:2.0.1-py3.10-cuda11.8.0-devel-ubuntu22.04)"
+* RunPod "is a cloud computing platform, primarily designed for AI and machine learning applications. Our key offerings include GPU Instances, Serverless GPUs, and AI Endpoints." ([Source](https://docs.runpod.io/docs))
+    * product: "On-Demand - Secure Cloud"
+    * template: `Pytorch 2.0.1 (runpod/pytorch:2.0.1-py3.10-cuda11.8.0-devel-ubuntu22.04)`
     * gpus: 2x A100 80 GB GPU -> 160 GB VRAM
     * cpu/ram: 16 vCPU, 377 GB RAM
     * disk setup: 20 GB Disk, 200 GB Encrypted Pod Volume, Volume Path: /workspace
@@ -231,9 +231,10 @@ INFO 11-18 05:15:34 llm_engine.py:72] Initializing an LLM engine with config: mo
 ...
 ```
 
-About 15 minutes later the model will have loaded.
+About 15 minutes later the model will have loaded. Wait for the `Application startup complete` messages to appear.
 
 ```shell
+root@51cec9d564cc:/workspace# tail -f nohup.out
 ...
 INFO 11-18 05:28:27 llm_engine.py:207] # GPU blocks: 2593, # CPU blocks: 1638
 INFO:     Started server process [2438]
@@ -383,7 +384,7 @@ pped: 0 reqs, Pending: 0 reqs, GPU KV cache usage: 78.3%, CPU KV cache
 ```
 
 ## Observations
-* peak perormance occured during times, when no pending requests or swapped out requests were present
+* peak peformance occured during times, when no pending requests or swapped out requests were present
 
 # Error Case
 
