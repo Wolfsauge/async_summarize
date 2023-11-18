@@ -300,9 +300,10 @@ Sat Nov 18 05:33:40 2023
 +---------------------------------------------------------------------------------------+
 ```
 
-Now it's the time to do some inference.
+Now it's the time to do some inference. A possible config.yaml file looks like this:
 
 ```yaml
+$ cat config-runpod-2xA100-jondurbin_airoboros-l2-70b-3.1.2.yaml
 ---
 httpx_max_keepalive_connections: 5
 httpx_max_connections: 20
