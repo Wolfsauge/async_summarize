@@ -488,7 +488,4 @@ Your code has been rated at 10.00/10 (previous run: 9.81/10, +0.19)
 * peak peformance occured during times, when no pending requests or swapped out requests were present
 
 ## Notes
-* this is a small hobbyist project:
-    * no error handling
-    * no logging
-    * no pytest
+* pytest, error handling and logging are not implemented
