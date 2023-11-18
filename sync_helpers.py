@@ -37,7 +37,7 @@ def get_prompt_template(prompt_template_filename: str) -> str:
         with rich.progress.open(prompt_template_filename, "r", encoding="utf-8") as file:
             prompt_template = yaml.safe_load(file)
             prompt_template = prompt_template["prompt_template"]
-            ic(prompt_template)
+        ic(prompt_template)
 
     except (IOError, OSError) as my_exception:
         warning_message = f"{my_exception}"
