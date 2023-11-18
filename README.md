@@ -73,17 +73,35 @@ $ poetry install
 * Inference/server was a oobabooga (commit `f889302d2427c03a3c15925dd097c6213845660c`) on Windows 10, RTX 3090, Cuda 12.1.1, transformers 4.35.2.
 * Sample Text [Frankenstein; Or, The Modern Prometheus by Mary Wollstonecraft Shelley](https://www.gutenberg.org/ebooks/84)
 
-```shell
+```text
 $ poetry run ./main.py -f pg84.txt
 None of PyTorch, TensorFlow >= 2.0, or Flax have been found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
+ic| buck_slip: {'api_key': 'empty',
+                'api_url': 'http://ultraforce:5000/v1',
+                'chunk_overlap': 512,
+                'chunk_size': 3000,
+                'httpx_max_connections': 1,
+                'httpx_max_keepalive_connections': 1,
+                'max_tokens': 1000,
+                'model_identifier': 'jondurbin/airoboros-m-7b-3.1.2',
+                'use_batched_tokenization': True,
+                'use_fast': True}
+ic| type(tokenizer): <class 'transformers.models.llama.tokenization_llama_fast.LlamaTokenizerFast'>
+ic| tokenizer.is_fast: True
+ic| type(encoding): <class 'transformers.tokenization_utils_base.BatchEncoding'>
+ic| encoding.is_fast: True
+ic| type(text_splitter): <class 'langchain.text_splitter.RecursiveCharacterTextSplitter'>
+ic| batched_tokenization: True
+ic| type(api_client): <class 'openai.AsyncOpenAI'>
 ic| input_filename: 'pg84.txt'
-ic| len(my_config): 8
-ic| my_depth: 1
-ic| len(chunks): 47
-ic| my_depth: 2
-ic| my_depth: 2
-[...]
 ic| output_filename: 'pg84-analysis-jondurbin_airoboros-m-7b-3.1.2.json'
+ic| 'Init complete.'
+ic| recursion_depth: 1
+ic| len(chunks): 47
+ic| recursion_depth: 2
+ic| recursion_depth: 2
+ic| recursion_depth: 2
+[...]
 ```
 
 * The resulting JSON looks like this:
@@ -97,7 +115,8 @@ $ jq . < pg84-analysis-jondurbin_airoboros-m-7b-3.1.2.json
   "chunk_size": 3000,
   "chunk_overlap": 512,
   "max_tokens": 1000,
-  "api_url": "http://ultraforce:5000/v1"
+  "api_url": "http://ultraforce:5000/v1",
+  "length_of_sample_text_in_characters": 438838
 }
 ```
 
