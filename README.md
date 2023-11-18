@@ -349,6 +349,63 @@ do
 done
 ```
 
+An example call looks like this.
+
+```shell
+$ poetry run ./main.py \
+        -c config-runpod-2xA100-jondurbin_airoboros-l2-70b-3.1.2.yaml \
+        -p prompt-airoboros-extended-summarize-130.yaml \
+        -f De-Orbe-Novo.txt
+None of PyTorch, TensorFlow >= 2.0, or Flax have been found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
+ic| buck_slip_filename: 'config-runpod-2xA100-jondurbin_airoboros-l2-70b-3.1.2.yaml'
+Reading... ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 281/281 bytes 0:00:00
+ic| buck_slip: {'api_key': 'empty',
+                'api_url': 'http://localhost:8000/v1',
+                'chunk_overlap': 512,
+                'chunk_size': 3000,
+                'httpx_max_connections': 20,
+                'httpx_max_keepalive_connections': 5,
+                'max_tokens': 1000,
+                'model_identifier': 'jondurbin/airoboros-l2-70b-3.1.2',
+                'temperature': 0.2,
+                'use_batched_tokenization': True,
+                'use_fast': True}
+ic| prompt_template_filename: 'prompt-airoboros-extended-summarize-130.yaml'
+Reading... ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 393/393 bytes 0:00:00
+ic| prompt_template: ('BEGININPUT
+                     '
+                      '{{ prompt }}
+                     '
+                      'ENDINPUT
+                     '
+                      'BEGININSTRUCTION
+                     '
+                      'Summarize the input in about 130 words, focusing on characters, actions and '
+                      'events. Infer the scene description, the appearance and personality of the '
+                      'characters involved and write confidently and leave everything out, which is '
+                      'not well defined in the input. Keep your response in one paragraph.
+                     '
+                      'ENDINSTRUCTION')
+ic| type(tokenizer): <class 'transformers.models.llama.tokenization_llama_fast.LlamaTokenizerFast'>
+ic| tokenizer.is_fast: True
+ic| type(encoding): <class 'transformers.tokenization_utils_base.BatchEncoding'>
+ic| encoding.is_fast: True
+ic| type(text_splitter): <class 'langchain.text_splitter.RecursiveCharacterTextSplitter'>
+ic| batched_tokenization: True
+ic| type(api_client): <class 'openai.AsyncOpenAI'>
+ic| input_filename: 'De-Orbe-Novo.txt'
+Reading... ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 776.0/776.0 kB 0:00:00
+ic| len(sample_text): 762610
+ic| output_filename: 'De-Orbe-Novo-analysis-jondurbin_airoboros-l2-70b-3.1.2-0001.json'
+ic| 'Init complete.'
+ic| recursion_depth: 1
+ic| len(chunks): 84
+ic| recursion_depth: 2
+ic| recursion_depth: 2
+ic| recursion_depth: 2
+...
+```
+
 Once your script has finished, do not forget to copy the nohup.out file. Searching through the nohup.out file finds things.
 
 ```shell
