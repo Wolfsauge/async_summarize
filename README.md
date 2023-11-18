@@ -150,7 +150,7 @@ $ jq . < pg84-analysis-jondurbin_airoboros-m-7b-3.1.2.json
     "text_splitter": "<langchain.text_splitter.RecursiveCharacterTextSplitter object at 0x10a776e90>",
     "api_client": "<openai.AsyncOpenAI object at 0x10a8d2050>",
     "length_of_sample_text_in_characters": 438838,
-    "summarize_duration": "472.67 seconds"
+    "summarize_duration": 472.67
   }
 }
 ```
