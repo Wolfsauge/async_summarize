@@ -18,6 +18,7 @@ def get_buck_slip_config(buck_slip_filename: str) -> dict:
     }
 
     try:
+        ic(buck_slip_filename)
         with rich.progress.open(buck_slip_filename, "r", encoding="utf-8") as file:
             buck_slip = yaml.safe_load(file)
         ic(buck_slip)
@@ -34,6 +35,7 @@ def get_buck_slip_config(buck_slip_filename: str) -> dict:
 
 def get_prompt_template(prompt_template_filename: str) -> str:
     try:
+        ic(prompt_template_filename)
         with rich.progress.open(prompt_template_filename, "r", encoding="utf-8") as file:
             prompt_template = yaml.safe_load(file)
             prompt_template = prompt_template["prompt_template"]
