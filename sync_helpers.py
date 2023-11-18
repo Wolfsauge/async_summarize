@@ -3,12 +3,13 @@ import sys
 import re
 import json
 import yaml
+import rich.progress
 
 from icecream import ic  # type: ignore
 from langchain.text_splitter import RecursiveCharacterTextSplitter, TextSplitter
 
 
-def get_yaml_config(buck_slip_filename: str) -> dict:
+def get_buck_slip_config(buck_slip_filename: str) -> dict:
     buck_slip = {
         "httpx_max_connections": 1,
         "httpx_max_keepalive_connections": 1,
@@ -17,7 +18,7 @@ def get_yaml_config(buck_slip_filename: str) -> dict:
     }
 
     try:
-        with open(buck_slip_filename, "r", encoding="utf-8") as file:
+        with rich.progress.open(buck_slip_filename, "r", encoding="utf-8") as file:
             buck_slip = yaml.safe_load(file)
         ic(buck_slip)
 
@@ -29,6 +30,20 @@ def get_yaml_config(buck_slip_filename: str) -> dict:
     )
 
     return buck_slip
+
+
+def get_prompt_template(prompt_template_filename: str) -> str:
+    try:
+        with rich.progress.open(prompt_template_filename, "r", encoding="utf-8") as file:
+            prompt_template = yaml.safe_load(file)
+            prompt_template = prompt_template["prompt_template"]
+            ic(prompt_template)
+
+    except (IOError, OSError) as my_exception:
+        warning_message = f"{my_exception}"
+        ic(warning_message)
+
+    return prompt_template
 
 
 def get_length_of_chunk_in_tokens(my_chunk: str, buck_slip: dict) -> int:
@@ -91,13 +106,12 @@ def write_output_file(output_filename: str, data: dict) -> None:
 
 
 def update_result(result: dict, buck_slip: dict) -> dict:
-    result["model_identifier"] = buck_slip["model_identifier"]
-    result["chunk_size"] = buck_slip["chunk_size"]
-    result["chunk_overlap"] = buck_slip["chunk_overlap"]
-    result["max_tokens"] = buck_slip["max_tokens"]
-    result["api_url"] = buck_slip["api_url"]
-    result["length_of_sample_text_in_characters"] = buck_slip[
-        "length_of_sample_text_in_characters"
-    ]
+    # Stringify runtime components of the buck slip for reference
+    buck_slip["tokenizer"] = str(buck_slip["tokenizer"])
+    buck_slip["text_splitter"] = str(buck_slip["text_splitter"])
+    buck_slip["api_client"] = str(buck_slip["api_client"])
+
+    # Add the finalized buck slip to the result dict
+    result["buck_slip"] = buck_slip
 
     return result

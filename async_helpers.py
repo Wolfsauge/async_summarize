@@ -1,6 +1,8 @@
 import sys
 import asyncio
 import httpx
+import jinja2
+import rich.progress
 
 from icecream import ic  # type: ignore
 from transformers import AutoTokenizer, LlamaTokenizerFast  # type: ignore
@@ -10,34 +12,15 @@ from sync_helpers import get_length_of_chunk_in_tokens
 
 
 async def get_result(my_chunk: str, buck_slip: dict) -> str:
-    #     my_prompt = f"""BEGININPUT
-    # {my_chunk}
-    # ENDINPUT
-    # BEGININSTRUCTION
-    # Summarize the input in about 130 words.
-    # ENDINSTRUCTION
-    # """
-
-    #     my_prompt = f"""BEGININPUT
-    # {my_chunk}
-    # ENDINPUT
-    # BEGININSTRUCTION
-    # Summarize the input in about 130 words, focusing on characters, actions and events. Infer the appearance and personality of the characters involved in a few sentences, if they are mentioned in the text. Write confidently even if character qualities are vague or poorly-defined. Keep your response in one paragraph.
-    # ENDINSTRUCTION
-    # """
-
-    my_prompt = f"""BEGININPUT
-{my_chunk}
-ENDINPUT
-BEGININSTRUCTION
-Summarize the input in about 130 words, focusing on characters, actions and events. Infer the scene description, the appearance and personality of the characters involved and write confidently and leave everything out, which is not well defined in the input. Keep your response in one paragraph.
-ENDINSTRUCTION
-"""
+    environment = jinja2.Environment()
+    template = environment.from_string(str(buck_slip["prompt_template"]))
+    my_prompt = template.render(prompt=my_chunk)
 
     completion = await buck_slip["api_client"].completions.create(
         model=buck_slip["model_local_identifier"],
         prompt=my_prompt,
         max_tokens=buck_slip["max_tokens"],
+        temperature=buck_slip["temperature"],
     )
 
     return completion.choices[0].text
@@ -57,11 +40,12 @@ async def enter_recursion(my_chunk: str, recursion_depth: int, buck_slip: dict) 
     length_of_chunk_in_tokens = get_length_of_chunk_in_tokens(my_chunk, buck_slip)
 
     if length_of_chunk_in_tokens >= buck_slip["chunk_size"]:
-        # we need to split
+        # We need to split
         chunks = await get_async_chunking(my_chunk, buck_slip)
         ic(len(chunks))
 
         partial_results = []
+
         partial_results = await asyncio.gather(
             *[
                 enter_recursion(partial_chunk, recursion_depth, buck_slip)
@@ -75,7 +59,7 @@ async def enter_recursion(my_chunk: str, recursion_depth: int, buck_slip: dict) 
             my_result_string, recursion_depth, buck_slip
         )
     else:
-        # we can summarize
+        # We can summarize
         intermediate_result = await get_result(my_chunk, buck_slip)
         ic(len(str(intermediate_result)))
 
@@ -85,11 +69,10 @@ async def enter_recursion(my_chunk: str, recursion_depth: int, buck_slip: dict) 
 
 
 async def get_file_contents(my_filename: str, buck_slip: dict) -> str:
-    with open(my_filename, "r", encoding="utf-8") as my_fp:
+    with rich.progress.open(my_filename, "r", encoding="utf-8") as my_fp:
         sample_text = my_fp.read()
     buck_slip["length_of_sample_text_in_characters"] = len(sample_text)
     ic(len(sample_text))
-    ic(my_fp)
 
     return sample_text
 
