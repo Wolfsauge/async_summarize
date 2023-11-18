@@ -74,7 +74,10 @@ $ poetry install
 * Sample Text [Frankenstein; Or, The Modern Prometheus by Mary Wollstonecraft Shelley](https://www.gutenberg.org/ebooks/84)
 
 ```text
-$ poetry run ./main.py -c config-jondurbin_airoboros-m-7b-3.1.2.yaml -p prompt-airoboros-default-summarize-130.yaml -f pg84.txt
+$ poetry run ./main.py \
+    -c config-jondurbin_airoboros-m-7b-3.1.2.yaml \
+    -p prompt-airoboros-default-summarize-130.yaml \
+    -f pg84.txt
 None of PyTorch, TensorFlow >= 2.0, or Flax have been found. Models won't be available and only tokenizers, configuration and file/data utilities can be used.
 ic| buck_slip_filename: 'config-jondurbin_airoboros-m-7b-3.1.2.yaml'
 Reading... ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 351/351 bytes 0:00:00
