@@ -1,3 +1,5 @@
+<img align="right" src="images/async_summarize.png">
+
 # async_summarize
 An asynchronous summarization script.
 
