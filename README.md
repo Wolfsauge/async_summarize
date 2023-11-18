@@ -131,13 +131,27 @@ ic| recursion_depth: 2
 $ jq . < pg84-analysis-jondurbin_airoboros-m-7b-3.1.2.json
 {
   "summary": "Robert Walton, a man with extraordinary imagination embarks on a journey to the North Pole. Edward, a young man of remarkable scientific mind sails with Walton. Along the journey, they encounter harsh weather conditions the include extreme cold which causes the ship's sails to freeze. In desolation, they hear a man calling out for help and they meet a monster that is actually Frankenstein's creature. The creature tells his story, which includes his inability to find companionship and loneliness, which eventually drove him to kill. When Walton reaches the Pole he sends his remaining letters to his sister.",
-  "duration": "448.05 seconds",
-  "model_identifier": "jondurbin/airoboros-m-7b-3.1.2",
-  "chunk_size": 3000,
-  "chunk_overlap": 512,
-  "max_tokens": 1000,
-  "api_url": "http://ultraforce:5000/v1",
-  "length_of_sample_text_in_characters": 438838
+  "buck_slip": {
+    "httpx_max_keepalive_connections": 1,
+    "httpx_max_connections": 1,
+    "use_fast": true,
+    "use_batched_tokenization": true,
+    "chunk_size": 3000,
+    "chunk_overlap": 512,
+    "api_url": "http://ultraforce:5000/v1",
+    "api_key": "empty",
+    "model_identifier": "jondurbin/airoboros-m-7b-3.1.2",
+    "max_tokens": 1000,
+    "temperature": 0.2,
+    "model_local_identifier": "jondurbin_airoboros-m-7b-3.1.2",
+    "prompt_template": "BEGININPUT\n{{ prompt }}\nENDINPUT\nBEGININSTRUCTION\nSummarize the input in about 130 words.\nENDINSTRUCTION",
+    "prompt_template_filename": "prompt-airoboros-default-summarize-130.yaml",
+    "tokenizer": "LlamaTokenizerFast(name_or_path='jondurbin/airoboros-m-7b-3.1.2', vocab_size=32000, model_max_length=1000000000000000019884624838656, is_fast=True, padding_side='left', truncation_side='right', special_tokens={'bos_token': '<s>', 'eos_token': '</s>', 'unk_token': '<unk>'}, clean_up_tokenization_spaces=False),  added_tokens_decoder={\n\t0: AddedToken(\"<unk>\", rstrip=False, lstrip=False, single_word=False, normalized=False, special=True),\n\t1: AddedToken(\"<s>\", rstrip=False, lstrip=False, single_word=False, normalized=False, special=True),\n\t2: AddedToken(\"</s>\", rstrip=False, lstrip=False, single_word=False, normalized=False, special=True),\n}",
+    "text_splitter": "<langchain.text_splitter.RecursiveCharacterTextSplitter object at 0x10a776e90>",
+    "api_client": "<openai.AsyncOpenAI object at 0x10a8d2050>",
+    "length_of_sample_text_in_characters": 438838,
+    "summarize_duration": "472.67 seconds"
+  }
 }
 ```
 
