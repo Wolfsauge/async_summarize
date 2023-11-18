@@ -105,6 +105,7 @@ def get_output_filename(my_input_filename: str, buck_slip: dict) -> str:
 def write_output_file(output_filename: str, data: dict) -> None:
     with open(output_filename, "w", encoding="utf-8") as my_fp:
         json.dump(data, my_fp)
+    ic(output_filename)
 
 
 def update_result(result: dict, buck_slip: dict) -> dict:
