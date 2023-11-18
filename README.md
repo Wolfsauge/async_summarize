@@ -476,11 +476,19 @@ pped: 0 reqs, Pending: 0 reqs, GPU KV cache usage: 78.3%, CPU KV cache
  usage: 0.0%
 ```
 
+## Pylint
+```shell
+$ pylint main.py
+
+-------------------------------------------------------------------
+Your code has been rated at 10.00/10 (previous run: 9.81/10, +0.19)
+```
+
 ## Observations
 * peak peformance occured during times, when no pending requests or swapped out requests were present
 
 ## Notes
-* this is a small hobbyist project, don't use this in production!
-* no error handling
-* no logging
-* no pytest
+* this is a small hobbyist project:
+    * no error handling
+    * no logging
+    * no pytest
