@@ -11,3 +11,5 @@ model_identifier: jondurbin/airoboros-m-7b-3.1.2
 max_tokens: 1000
 httpx_max_keepalive_connections: 1
 httpx_max_connections: 1
+use_fast: true
+use_batched_tokenization: true

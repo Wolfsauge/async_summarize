@@ -1,3 +1,4 @@
+import sys
 import asyncio
 import httpx
 
@@ -43,8 +44,9 @@ ENDINSTRUCTION
 
 
 async def get_async_chunking(my_chunk: str, buck_slip: dict) -> list:
-    my_chunks = buck_slip["text_splitter"].split_text(my_chunk)
-    return my_chunks
+    chunks = buck_slip["text_splitter"].split_text(my_chunk)
+
+    return chunks
 
 
 async def enter_recursion(my_chunk: str, recursion_depth: int, buck_slip: dict) -> str:
@@ -88,10 +90,24 @@ async def get_file_contents(my_filename: str) -> str:
 
 
 async def get_tokenizer(buck_slip: dict) -> LlamaTokenizerFast:
-    my_tokenizer = AutoTokenizer.from_pretrained(
-        buck_slip["model_identifier"], use_fast=True
-    )
-    return my_tokenizer
+    if buck_slip["use_fast"] is True:
+        tokenizer = AutoTokenizer.from_pretrained(
+            buck_slip["model_identifier"], use_fast=True
+        )
+        ic(type(tokenizer))
+        ic(tokenizer.is_fast)
+        encoding = tokenizer(
+            "My name is Sylvain and I work at Hugging Face in Brooklyn."
+        )
+        ic(type(encoding))
+        ic(encoding.is_fast)
+        if tokenizer.is_fast is not True or encoding.is_fast is not True:
+            sys.exit(1)
+    else:
+        ic("ERROR: use_fast = False not implemented")
+        sys.exit(1)
+
+    return tokenizer
 
 
 async def get_api_client(buck_slip: dict) -> AsyncOpenAI:
@@ -103,9 +119,11 @@ async def get_api_client(buck_slip: dict) -> AsyncOpenAI:
     )
     timeout = httpx.Timeout(600.0, connect=60.0)
 
-    client = AsyncOpenAI(
+    api_client = AsyncOpenAI(
         api_key=buck_slip["api_key"],
         base_url=buck_slip["api_url"],
         http_client=httpx.AsyncClient(limits=limits, timeout=timeout),
     )
-    return client
+    ic(type(api_client))
+
+    return api_client

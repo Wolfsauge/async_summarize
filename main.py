@@ -44,21 +44,13 @@ async def main(my_args: CommandlineArguments) -> None:
 
     # Enable fast tokenizer
     tokenizer = await get_tokenizer(buck_slip)
-    encoding = tokenizer("My name is Sylvain and I work at Hugging Face in Brooklyn.")
-    ic(tokenizer.is_fast)
-    ic(encoding.is_fast)
-    if tokenizer.is_fast is not True or encoding.is_fast is not True:
-        sys.exit(1)
     buck_slip["tokenizer"] = tokenizer
-    ic(type(buck_slip["tokenizer"]))
 
     # Enable text splitter
     buck_slip["text_splitter"] = get_text_splitter(buck_slip)
-    ic(type(buck_slip["text_splitter"]))
 
     # Enable OpenAI-compatible API
     buck_slip["api_client"] = await get_api_client(buck_slip)
-    ic(type(buck_slip["api_client"]))
 
     # Determine input file name
     input_filename = my_args.file
@@ -67,7 +59,7 @@ async def main(my_args: CommandlineArguments) -> None:
     # Read input file
     sample_text = await get_file_contents(my_args.file)
     buck_slip["length_of_sample_text_in_characters"] = len(sample_text)
-    ic(buck_slip["length_of_sample_text_in_characters"])
+    # ic(buck_slip["length_of_sample_text_in_characters"])
 
     # Determine output file name
     output_filename = get_output_filename(input_filename, buck_slip)

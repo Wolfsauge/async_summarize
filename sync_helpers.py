@@ -31,37 +31,42 @@ def get_yaml_config(buck_slip_filename: str) -> dict:
 
 
 def get_length_of_chunk_in_tokens(my_chunk: str, buck_slip: dict) -> int:
-    result = buck_slip["tokenizer"](my_chunk)
-    my_input_ids = result.input_ids
+    my_result = buck_slip["tokenizer"](my_chunk)
+    input_ids = my_result.input_ids
+    length_of_chunk_in_tokens = len(input_ids)
 
-    return len(my_input_ids)
+    return length_of_chunk_in_tokens
 
 
 def get_text_splitter(buck_slip: dict) -> TextSplitter:
-    # my_text_splitter = RecursiveCharacterTextSplitter(
-    #     separators=["\n\n", "\n", "."],
-    #     chunk_size=buck_slip["chunk_size"],
-    #     chunk_overlap=buck_slip["chunk_overlap"],
-    #     length_function=lambda x: get_length_of_chunk_in_tokens(x, buck_slip),
-    #     is_separator_regex=False,
-    # )
+    batched_tokenization = buck_slip["use_batched_tokenization"]
+    if batched_tokenization is True:
+        text_splitter = RecursiveCharacterTextSplitter.from_huggingface_tokenizer(
+            tokenizer=buck_slip["tokenizer"],
+            chunk_size=buck_slip["chunk_size"],
+            chunk_overlap=buck_slip["chunk_overlap"],
+        )
+    else:
+        text_splitter = RecursiveCharacterTextSplitter(
+            separators=["\n\n", "\n", "."],
+            chunk_size=buck_slip["chunk_size"],
+            chunk_overlap=buck_slip["chunk_overlap"],
+            length_function=lambda x: get_length_of_chunk_in_tokens(x, buck_slip),
+            is_separator_regex=False,
+        )
+    ic(type(text_splitter))
+    ic(batched_tokenization)
 
-    my_text_splitter = RecursiveCharacterTextSplitter.from_huggingface_tokenizer(
-        tokenizer=buck_slip["tokenizer"],
-        chunk_size=buck_slip["chunk_size"],
-        chunk_overlap=buck_slip["chunk_overlap"],
-    )
-
-    return my_text_splitter
+    return text_splitter
 
 
 def get_output_filename(my_input_filename: str, buck_slip: dict) -> str:
     my_local_identifier = buck_slip["model_local_identifier"]
     replacement = f"-analysis-{my_local_identifier}.json"
-    my_output_filename = os.path.basename(my_input_filename)
-    my_output_filename = re.sub("\\.txt$", replacement, my_output_filename)
+    output_filename = os.path.basename(my_input_filename)
+    output_filename = re.sub("\\.txt$", replacement, output_filename)
 
-    return my_output_filename
+    return output_filename
 
 
 def write_output_file(output_filename: str, data: dict) -> None:
@@ -75,5 +80,8 @@ def update_result(result: dict, buck_slip: dict) -> dict:
     result["chunk_overlap"] = buck_slip["chunk_overlap"]
     result["max_tokens"] = buck_slip["max_tokens"]
     result["api_url"] = buck_slip["api_url"]
+    result["length_of_sample_text_in_characters"] = buck_slip[
+        "length_of_sample_text_in_characters"
+    ]
 
     return result
