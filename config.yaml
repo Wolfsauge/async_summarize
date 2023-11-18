@@ -7,6 +7,7 @@ api_url: http://ultraforce:5000/v1
 api_key: empty
 # model_identifier: jondurbin/airoboros-l2-70b-3.1.2
 model_identifier: jondurbin/airoboros-m-7b-3.1.2
+# model_identifier: ehartford/dolphin-2.2-70b
 # model_identifier: TheBloke/Nous-Hermes-Llama2-70B-GPTQ
 max_tokens: 1000
 httpx_max_keepalive_connections: 1
