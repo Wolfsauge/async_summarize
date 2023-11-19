@@ -1,20 +1,48 @@
+import sys
 import asyncio
 import jinja2
 from icecream import ic  # type: ignore
 from sync_helpers import get_length_of_chunk_in_tokens
 
 
-async def get_result(my_chunk: str, buck_slip: dict) -> str:
+async def get_completion(my_chunk: str, buck_slip: dict) -> str:
     environment = jinja2.Environment()
     template = environment.from_string(str(buck_slip["prompt_template"]))
     my_prompt = template.render(prompt=my_chunk)
 
-    completion = await buck_slip["api_client"].completions.create(
-        model=buck_slip["model_local_identifier"],
-        prompt=my_prompt,
-        max_tokens=buck_slip["max_tokens"],
-        temperature=buck_slip["temperature"],
-    )
+    bad_counter = 0
+    attempt_counter = 0
+
+    while attempt_counter <= buck_slip["max_completion_retries"]:
+        completion = await buck_slip["api_client"].completions.create(
+            model=buck_slip["model_local_identifier"],
+            prompt=my_prompt,
+            max_tokens=buck_slip["max_tokens"],
+            temperature=buck_slip["temperature"],
+        )
+
+        attempt_counter += 1
+
+        finish_reason = completion.choices[0].finish_reason
+
+        if finish_reason == "stop":
+            break
+
+        bad_counter += 1
+
+        ic(completion)
+        ic(attempt_counter)
+        ic(bad_counter)
+        ic(finish_reason)
+        ic("ERROR: finish_reason != 'stop', retrying.")
+
+    if bad_counter >= buck_slip["max_completion_retries"]:
+        ic(completion)
+        ic(attempt_counter)
+        ic(bad_counter)
+        ic(finish_reason)
+        ic("ERROR: aborting after multiple failed attempts.")
+        sys.exit(1)
 
     return completion.choices[0].text
 
@@ -53,7 +81,7 @@ async def enter_recursion(my_chunk: str, recursion_depth: int, buck_slip: dict) 
         )
     else:
         # We can summarize
-        intermediate_result = await get_result(my_chunk, buck_slip)
+        intermediate_result = await get_completion(my_chunk, buck_slip)
         ic(len(str(intermediate_result)))
 
     my_result = str(intermediate_result).strip()
