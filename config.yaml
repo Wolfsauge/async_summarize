@@ -15,3 +15,4 @@ model_identifier: jondurbin/airoboros-m-7b-3.1.2
 # model_identifier: TheBloke/Nous-Hermes-Llama2-70B-GPTQ
 max_tokens: 1000
 temperature: 0.2
+max_completion_retries: 5
