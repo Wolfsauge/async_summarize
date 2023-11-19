@@ -1,0 +1,7 @@
+prompt_template: |-
+  BEGININPUT
+  {{ prompt }}
+  ENDINPUT
+  BEGININSTRUCTION
+  Summarize the input in about 130 words, focusing on characters, actions and events. Infer the scene description, the appearance and personality of the characters involved and write confidently and leave everything out, which is not well defined in the input. Keep your response in one paragraph.
+  ENDINSTRUCTION
