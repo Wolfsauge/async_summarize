@@ -491,3 +491,81 @@ Your code has been rated at 10.00/10 (previous run: 9.81/10, +0.19)
 
 ## Notes
 * pytest, error handling and logging are not implemented
+
+# Thoughts
+
+* I make four runs to evaluate the effects of **use_fast** and **use_batched_tokenization**, without tensor parallelism in the API (!)
+* with each permutation of use_fast and use_batched_tokenization set to either true or false
+* knowing one of these permutations do not make sense:
+    * use_fast == False and use_batched_tokenization == True is not possible and should fall back to non-batched tokenization
+* I don't know how to determine an `is_batched` status like checking `is_fast`
+* currently I do not record traces and a lot of metrics of the summarization
+    * I don't know how much time is spent with tokenization, waiting for summarization, doing nothing, ...
+    * I do not evaluate the OpenAI-compat API response
+        * I could check the termination result (length?)
+        * I could try to count how many tokenizations are taking place
+* in result:
+    * the Huggingface transformers fast tokenizer is clearly the better choice, than the regular tokenizer, especially on smaller documents
+    * LangChain batched_tokenization doesn't seem to have a positive effect on how I am using it
+
+## 44K document
+```shell
+~/Desktop/GitHub/async_summarize batched-tokenizer*
+❯ for i in story-0904-analysis-jondurbin_airoboros-m-7b-3.1.2-002[3456].json
+do
+echo $i:
+jq . < $i | grep -E "use_|is_fast\"|duration" | grep -v encoding
+echo
+done
+story-0904-analysis-jondurbin_airoboros-m-7b-3.1.2-0023.json:
+    "use_fast": false,
+    "use_batched_tokenization": false,
+    "tokenizer.is_fast": false,
+    "summarize_duration_seconds": 95.42
+
+story-0904-analysis-jondurbin_airoboros-m-7b-3.1.2-0024.json:
+    "use_fast": true,
+    "use_batched_tokenization": false,
+    "tokenizer.is_fast": true,
+    "summarize_duration_seconds": 34.86
+
+story-0904-analysis-jondurbin_airoboros-m-7b-3.1.2-0025.json:
+    "use_fast": false,
+    "use_batched_tokenization": true,
+    "tokenizer.is_fast": false,
+    "summarize_duration_seconds": 37.23
+
+story-0904-analysis-jondurbin_airoboros-m-7b-3.1.2-0026.json:
+    "use_fast": true,
+    "use_batched_tokenization": true,
+    "tokenizer.is_fast": true,
+    "summarize_duration_seconds": 43.5
+```
+
+## 440K Document
+
+```shell
+pg84-analysis-jondurbin_airoboros-m-7b-3.1.2-0003.json:
+    "use_fast": false,
+    "use_batched_tokenization": false,
+    "tokenizer.is_fast": false,
+    "summarize_duration_seconds": 444.23
+
+pg84-analysis-jondurbin_airoboros-m-7b-3.1.2-0004.json:
+    "use_fast": true,
+    "use_batched_tokenization": false,
+    "tokenizer.is_fast": true,
+    "summarize_duration_seconds": 397.27
+
+pg84-analysis-jondurbin_airoboros-m-7b-3.1.2-0005.json:
+    "use_fast": false,
+    "use_batched_tokenization": true,
+    "tokenizer.is_fast": false,
+    "summarize_duration_seconds": 426.17
+
+pg84-analysis-jondurbin_airoboros-m-7b-3.1.2-0006.json:
+    "use_fast": true,
+    "use_batched_tokenization": true,
+    "tokenizer.is_fast": true,
+    "summarize_duration_seconds": 448.4
+```
