@@ -1,13 +1,6 @@
-import sys
 import asyncio
-import httpx
 import jinja2
-import rich.progress
-
 from icecream import ic  # type: ignore
-from transformers import AutoTokenizer, LlamaTokenizerFast  # type: ignore
-from openai import AsyncOpenAI
-
 from sync_helpers import get_length_of_chunk_in_tokens
 
 
@@ -66,49 +59,3 @@ async def enter_recursion(my_chunk: str, recursion_depth: int, buck_slip: dict) 
     my_result = str(intermediate_result).strip()
 
     return my_result
-
-
-async def get_file_contents(my_filename: str, buck_slip: dict) -> str:
-    with rich.progress.open(my_filename, "r", encoding="utf-8") as my_fp:
-        sample_text = my_fp.read()
-    buck_slip["length_of_sample_text_in_characters"] = len(sample_text)
-    ic(len(sample_text))
-
-    return sample_text
-
-
-async def get_tokenizer(buck_slip: dict) -> LlamaTokenizerFast:
-    tokenizer = AutoTokenizer.from_pretrained(
-        buck_slip["model_identifier"], use_fast=buck_slip["use_fast"]
-    )
-    ic(type(tokenizer))
-    ic(tokenizer.is_fast)
-    buck_slip["tokenizer.is_fast"] = tokenizer.is_fast
-
-    encoding = tokenizer(
-        "My name is Sylvain and I work at Hugging Face in Brooklyn."
-    )
-    ic(type(encoding))
-    ic(encoding.is_fast)
-    buck_slip["encoding.is_fast"] = encoding.is_fast
-
-    return tokenizer
-
-
-async def get_api_client(buck_slip: dict) -> AsyncOpenAI:
-    my_max_keepalive_connections = int(buck_slip["httpx_max_keepalive_connections"])
-    my_max_connections = int(buck_slip["httpx_max_connections"])
-    limits = httpx.Limits(
-        max_keepalive_connections=my_max_keepalive_connections,
-        max_connections=my_max_connections,
-    )
-    timeout = httpx.Timeout(600.0, connect=60.0)
-
-    api_client = AsyncOpenAI(
-        api_key=buck_slip["api_key"],
-        base_url=buck_slip["api_url"],
-        http_client=httpx.AsyncClient(limits=limits, timeout=timeout),
-    )
-    ic(type(api_client))
-
-    return api_client

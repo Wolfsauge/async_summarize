@@ -5,24 +5,19 @@ import asyncio
 
 from time import perf_counter
 from dataclasses import dataclass
-
 from icecream import ic  # type: ignore
-
 from sync_helpers import (
     get_buck_slip_config,
     get_prompt_template,
-    get_output_filename,
-    get_text_splitter,
-    write_output_file,
-    update_result,
-)
-
-from async_helpers import (
-    get_file_contents,
     get_tokenizer,
+    get_text_splitter,
     get_api_client,
-    enter_recursion,
+    get_file_contents,
+    get_output_filename,
+    insert_buckslip_into_result,
+    write_output_file,
 )
+from async_helpers import enter_recursion
 
 
 # Dataclass for commandline arguments
@@ -43,28 +38,29 @@ async def main(my_args: CommandlineArguments) -> None:
     # Initialize buck_slip dict
     config_filename = my_args.config
     buck_slip = get_buck_slip_config(config_filename)
+    buck_slip["config_filename"] = config_filename
 
-    # Initialize buck_slip dict
+    # Get prompt_template
     prompt_template_filename = my_args.prompt
     buck_slip["prompt_template"] = get_prompt_template(prompt_template_filename)
     buck_slip["prompt_template_filename"] = prompt_template_filename
 
-    # Enable fast tokenizer
-    tokenizer = await get_tokenizer(buck_slip)
-    buck_slip["tokenizer"] = tokenizer
+    # Get tokenizer
+    buck_slip["tokenizer"] = get_tokenizer(buck_slip)
 
-    # Enable text splitter
+    # Get text splitter
     buck_slip["text_splitter"] = get_text_splitter(buck_slip)
 
-    # Enable OpenAI-compatible API
-    buck_slip["api_client"] = await get_api_client(buck_slip)
+    # Get OpenAI-compatible API
+    buck_slip["api_client"] = get_api_client(buck_slip)
 
     # Determine input file name
     input_filename = my_args.file
+    buck_slip["input_filename"] = input_filename
     ic(input_filename)
 
-    # Read input file
-    sample_text = await get_file_contents(my_args.file, buck_slip)
+    # Get the input
+    sample_text = get_file_contents(my_args.file, buck_slip)
 
     # Determine output file name
     output_filename = get_output_filename(input_filename, buck_slip)
@@ -90,7 +86,9 @@ async def main(my_args: CommandlineArguments) -> None:
 
     # Create result dictionary
     result["summary"] = summary
-    result = update_result(result, buck_slip)
+
+    # Update result with buck slip information
+    result = insert_buckslip_into_result(result, buck_slip)
 
     # Write the output file
     write_output_file(output_filename, result)
