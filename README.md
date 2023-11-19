@@ -11,7 +11,7 @@ The Python [httpx](https://www.python-httpx.org/) module manages the concurrency
 
 # Approach
 
-This script uses the _hierarchical merging_ approach, similar to the descriptions in the paper "BooookScore: A systematic exploration of book-length summarization in the era of LLMs" by Yapei Chang, Kyle Lo, Tanya Goyal, Mohit Iyyer, [PDF](https://arxiv.org/pdf/2310.00785.pdf). The following figure, from page 3 of this paper, shows the main steps of the algorithm (1).
+This script uses the _hierarchical merging_ approach, similar to the descriptions in the paper "BooookScore: A systematic exploration of book-length summarization in the era of LLMs" by Yapei Chang, Kyle Lo, Tanya Goyal, Mohit Iyyer, [PDF](https://arxiv.org/pdf/2310.00785.pdf). The following figure, from page 3 of this paper, is showing the main steps of the algorithm in the _left_ diagram.
 
 ![Figure 1](images/figure-1.png)
 
