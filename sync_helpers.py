@@ -64,18 +64,13 @@ def get_text_splitter(buck_slip: dict) -> TextSplitter:
             chunk_size=buck_slip["chunk_size"],
             chunk_overlap=buck_slip["chunk_overlap"],
         )
-        ic("LangChain RecursiveCharacterTextSplitter with batched tokenizer enabled.")
     else:
         text_splitter = RecursiveCharacterTextSplitter(
-            separators=["\n\n", "\n", "."],
             chunk_size=buck_slip["chunk_size"],
             chunk_overlap=buck_slip["chunk_overlap"],
             length_function=lambda x: get_length_of_chunk_in_tokens(x, buck_slip),
-            is_separator_regex=False,
         )
-        ic("LangChain RecursiveCharacterTextSplitter enabled.")
     ic(type(text_splitter))
-    ic(batched_tokenization)
 
     return text_splitter
 

@@ -37,7 +37,7 @@ async def main(my_args: CommandlineArguments) -> None:
     time_t0: float
     time_t1: float
     time_delta: float
-    summarize_duration: str
+    summarize_duration: float
     result: dict
 
     # Initialize buck_slip dict
@@ -83,7 +83,7 @@ async def main(my_args: CommandlineArguments) -> None:
     # Measure ending of recursive summarization
     time_t1 = perf_counter()
     time_delta = time_t1 - time_t0
-    summarize_duration = f"{time_delta:.2f}"
+    summarize_duration = float(f"{time_delta:.2f}")
     buck_slip["summarize_duration_seconds"] = float(summarize_duration)
     ic(summarize_duration)
     ic(summary)

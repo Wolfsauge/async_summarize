@@ -2,7 +2,7 @@
 httpx_max_keepalive_connections: 1
 httpx_max_connections: 1
 use_fast: true
-use_batched_tokenization: true
+use_batched_tokenization: false
 chunk_size: 3000
 chunk_overlap: 512
 # api_url: http://localhost:4999/v1
