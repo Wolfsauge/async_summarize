@@ -78,22 +78,19 @@ async def get_file_contents(my_filename: str, buck_slip: dict) -> str:
 
 
 async def get_tokenizer(buck_slip: dict) -> LlamaTokenizerFast:
-    if buck_slip["use_fast"] is True:
-        tokenizer = AutoTokenizer.from_pretrained(
-            buck_slip["model_identifier"], use_fast=True
-        )
-        ic(type(tokenizer))
-        ic(tokenizer.is_fast)
-        encoding = tokenizer(
-            "My name is Sylvain and I work at Hugging Face in Brooklyn."
-        )
-        ic(type(encoding))
-        ic(encoding.is_fast)
-        if tokenizer.is_fast is not True or encoding.is_fast is not True:
-            sys.exit(1)
-    else:
-        ic("ERROR: use_fast = False not implemented")
-        sys.exit(1)
+    tokenizer = AutoTokenizer.from_pretrained(
+        buck_slip["model_identifier"], use_fast=buck_slip["use_fast"]
+    )
+    ic(type(tokenizer))
+    ic(tokenizer.is_fast)
+    buck_slip["tokenizer.is_fast"] = tokenizer.is_fast
+
+    encoding = tokenizer(
+        "My name is Sylvain and I work at Hugging Face in Brooklyn."
+    )
+    ic(type(encoding))
+    ic(encoding.is_fast)
+    buck_slip["encoding.is_fast"] = encoding.is_fast
 
     return tokenizer
 
