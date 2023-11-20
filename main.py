@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+# import sys
 import argparse
 import asyncio
 
@@ -10,7 +11,7 @@ from sync_helpers import (
     get_buck_slip_config,
     get_prompt_template,
     get_tokenizer,
-    get_text_splitter,
+    # get_text_splitter,
     get_api_client,
     get_file_contents,
     get_output_filename,
@@ -35,6 +36,10 @@ async def main(my_args: CommandlineArguments) -> None:
     summarize_duration: float
     result: dict
 
+    # Check if all files given on the command line do exist
+    # error out if not.
+    # tbc.
+
     # Initialize buck_slip dict
     config_filename = my_args.config
     buck_slip = get_buck_slip_config(config_filename)
@@ -42,14 +47,14 @@ async def main(my_args: CommandlineArguments) -> None:
 
     # Get prompt_template
     prompt_template_filename = my_args.prompt
-    buck_slip["prompt_template"] = get_prompt_template(prompt_template_filename)
+    buck_slip["prompt_templates"] = get_prompt_template(prompt_template_filename)
     buck_slip["prompt_template_filename"] = prompt_template_filename
 
     # Get tokenizer
     buck_slip["tokenizer"] = get_tokenizer(buck_slip)
 
-    # Get text splitter
-    buck_slip["text_splitter"] = get_text_splitter(buck_slip)
+    # # Get text splitter
+    # buck_slip["text_splitter"] = get_text_splitter(buck_slip)
 
     # Get OpenAI-compatible API
     buck_slip["api_client"] = get_api_client(buck_slip)
@@ -74,7 +79,9 @@ async def main(my_args: CommandlineArguments) -> None:
     time_t0 = perf_counter()
 
     # Enter recursion
-    summary = await enter_recursion(sample_text, recursion_depth, buck_slip)
+    summary = await enter_recursion(
+        sample_text, recursion_depth, buck_slip, "summarize"
+    )
 
     # Measure ending of recursive summarization
     time_t1 = perf_counter()

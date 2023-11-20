@@ -1,7 +1,18 @@
-prompt_template: |-
-  BEGININPUT
-  {{ prompt }}
-  ENDINPUT
-  BEGININSTRUCTION
-  Summarize the input in about 130 words.
-  ENDINSTRUCTION
+---
+prompt_templates:
+  summarize: |-
+    BEGININPUT
+    {{ prompt }}
+    ENDINPUT
+    BEGININSTRUCTION
+    Summarize the input in about 130 words.
+    ENDINSTRUCTION
+  merge: |-
+    BEGININPUT
+    {{ first_element }}
+
+    {{ second_element }}
+    ENDINPUT
+    BEGININSTRUCTION
+    Summarize the input in about 130 words.
+    ENDINSTRUCTION

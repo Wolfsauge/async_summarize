@@ -2,6 +2,8 @@ import os
 import sys
 import re
 import json
+import math
+from typing import Iterable, Tuple, TypeVar
 import yaml
 import rich.progress
 import httpx
@@ -9,6 +11,8 @@ from transformers import AutoTokenizer, LlamaTokenizerFast  # type: ignore
 from langchain.text_splitter import RecursiveCharacterTextSplitter, TextSplitter
 from openai import AsyncOpenAI
 from icecream import ic  # type: ignore
+
+T = TypeVar("T")
 
 
 def get_length_of_chunk_in_tokens(my_chunk: str, buck_slip: dict) -> int:
@@ -50,7 +54,10 @@ def get_prompt_template(prompt_template_filename: str) -> str:
             prompt_template_filename, "r", encoding="utf-8"
         ) as file:
             prompt_template = yaml.safe_load(file)
-            prompt_template = prompt_template["prompt_template"]
+            prompt_template = prompt_template["prompt_templates"]
+        # Create enum of tasks (summarize, merge)
+        # Validate for each task a prompt is available
+        # Otherwise error out
         ic(prompt_template)
 
     except (IOError, OSError) as my_exception:
@@ -76,18 +83,27 @@ def get_tokenizer(buck_slip: dict) -> LlamaTokenizerFast:
     return tokenizer
 
 
-def get_text_splitter(buck_slip: dict) -> TextSplitter:
+def get_text_splitter(
+    buck_slip: dict, custom_chunk_size: int, custom_chunk_overlap: int
+) -> TextSplitter:
+    if custom_chunk_size is None:
+        custom_chunk_size = buck_slip["chunk_size"]
+
+    if custom_chunk_overlap is None:
+        custom_chunk_overlap = buck_slip["chunk_overlap"]
+
     batched_tokenization = buck_slip["use_batched_tokenization"]
+
     if batched_tokenization is True:
         text_splitter = RecursiveCharacterTextSplitter.from_huggingface_tokenizer(
             tokenizer=buck_slip["tokenizer"],
-            chunk_size=buck_slip["chunk_size"],
-            chunk_overlap=buck_slip["chunk_overlap"],
+            chunk_size=custom_chunk_size,
+            chunk_overlap=custom_chunk_overlap,
         )
     else:
         text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=buck_slip["chunk_size"],
-            chunk_overlap=buck_slip["chunk_overlap"],
+            chunk_size=custom_chunk_size,
+            chunk_overlap=custom_chunk_overlap,
             length_function=lambda x: get_length_of_chunk_in_tokens(x, buck_slip),
         )
     ic(type(text_splitter))
@@ -166,3 +182,22 @@ def write_output_file(output_filename: str, data: dict) -> None:
     with open(output_filename, "w", encoding="utf-8") as my_fp:
         json.dump(data, my_fp)
     ic(output_filename)
+
+
+def grouped(iterable: Iterable[T], number_of_elements=2) -> Iterable[Tuple[T, ...]]:
+    """s -> (s0,s1,s2,...sn-1), (sn,sn+1,sn+2,...s2n-1), ..."""
+    return zip(*[iter(iterable)] * number_of_elements)
+
+
+def power_log(my_x: int) -> int:
+    return 2 ** (math.ceil(math.log(my_x, 2)))
+
+
+def find_longest_element_index(elements) -> int:
+    max_length = 0
+    max_index = 0
+    for i, result in enumerate(elements):
+        if len(result) > max_length:
+            max_length = len(result)
+            max_index = i
+    return max_index
