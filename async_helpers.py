@@ -190,13 +190,11 @@ async def do_merging_step(partial_results: list, buck_slip: dict) -> str:
                     partial_results[my_pos2], buck_slip
                 )
             tqdm.write(f"Released {lock}.")
-            len_c_pos1 = len(partial_results[my_pos1])
-            len_c_pos2 = len(partial_results[my_pos2])
 
             # First we try to merge the smallest chunk with its adjacent chunk
             if (len_t_pos1 + len_t_pos2) <= buck_slip["chunk_size"]:
                 tqdm.write(
-                    f"Merging chunk #{my_pos1} ({len_c_pos1}/{len_t_pos1} chars/tokens) and #{my_pos2} ({len_c_pos2}/{len_t_pos2} chars/tokens)."
+                    f"Merging chunk #{my_pos1} ({len(partial_results[my_pos1])}/{len_t_pos1} chars/tokens) and #{my_pos2} ({len(partial_results[my_pos2])}/{len_t_pos2} chars/tokens)."
                 )
 
                 new_chunk, _ = await merge_elements(
