@@ -5,11 +5,13 @@ import json
 import math
 from typing import Iterable, Tuple, TypeVar
 import yaml
-import rich.progress
+# from tqdm import tqdm  # type: ignore
+# import rich.progress
 import httpx
 from transformers import AutoTokenizer, LlamaTokenizerFast  # type: ignore
 from langchain.text_splitter import RecursiveCharacterTextSplitter, TextSplitter
 from openai import AsyncOpenAI
+import jinja2
 from icecream import ic  # type: ignore
 
 T = TypeVar("T")
@@ -33,7 +35,7 @@ def get_buck_slip_config(buck_slip_filename: str) -> dict:
 
     try:
         ic(buck_slip_filename)
-        with rich.progress.open(buck_slip_filename, "r", encoding="utf-8") as file:
+        with open(buck_slip_filename, "r", encoding="utf-8") as file:
             buck_slip = yaml.safe_load(file)
         ic(buck_slip)
 
@@ -50,7 +52,7 @@ def get_buck_slip_config(buck_slip_filename: str) -> dict:
 def get_prompt_template(prompt_template_filename: str) -> str:
     try:
         ic(prompt_template_filename)
-        with rich.progress.open(
+        with open(
             prompt_template_filename, "r", encoding="utf-8"
         ) as file:
             prompt_template = yaml.safe_load(file)
@@ -118,7 +120,7 @@ def get_api_client(buck_slip: dict) -> AsyncOpenAI:
         max_keepalive_connections=my_max_keepalive_connections,
         max_connections=my_max_connections,
     )
-    timeout = httpx.Timeout(600.0, connect=60.0)
+    timeout = httpx.Timeout(1200.0, connect=60.0)
 
     api_client = AsyncOpenAI(
         api_key=buck_slip["api_key"],
@@ -130,8 +132,15 @@ def get_api_client(buck_slip: dict) -> AsyncOpenAI:
     return api_client
 
 
+def get_jinja2_environment():
+    jinja2_env = jinja2.Environment()
+    ic(type(jinja2_env))
+
+    return jinja2_env
+
+
 def get_file_contents(my_filename: str, buck_slip: dict) -> str:
-    with rich.progress.open(my_filename, "r", encoding="utf-8") as my_fp:
+    with open(my_filename, "r", encoding="utf-8") as my_fp:
         sample_text = my_fp.read()
     buck_slip["length_of_sample_text_in_characters"] = len(sample_text)
     ic(len(sample_text))
@@ -168,9 +177,11 @@ def insert_buckslip_into_result(result: dict, buck_slip: dict) -> dict:
     buck_slip["tokenizer_str"] = str(buck_slip["tokenizer"])
     buck_slip["text_splitter_str"] = str(buck_slip["text_splitter"])
     buck_slip["api_client_str"] = str(buck_slip["api_client"])
+    buck_slip["jinja2_env_str"] = str(buck_slip["jinja2_env"])
     del buck_slip["tokenizer"]
     del buck_slip["text_splitter"]
     del buck_slip["api_client"]
+    del buck_slip["jinja2_env"]
 
     # Insert stringified and thus JSON serializable buck slip into the result dict
     result["buck_slip"] = buck_slip
@@ -185,11 +196,12 @@ def write_output_file(output_filename: str, data: dict) -> None:
 
 
 def grouped(iterable: Iterable[T], number_of_elements=2) -> Iterable[Tuple[T, ...]]:
-    """s -> (s0,s1,s2,...sn-1), (sn,sn+1,sn+2,...s2n-1), ..."""
+    """https://stackoverflow.com/a/5389547"""
     return zip(*[iter(iterable)] * number_of_elements)
 
 
 def power_log(my_x: int) -> int:
+    """https://stackoverflow.com/a/14267825"""
     return 2 ** (math.ceil(math.log(my_x, 2)))
 
 

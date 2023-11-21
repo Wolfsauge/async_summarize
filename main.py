@@ -1,24 +1,24 @@
 #!/usr/bin/env python3
 
-# import sys
+import sys
 import argparse
 import asyncio
-
 from time import perf_counter
 from dataclasses import dataclass
 from icecream import ic  # type: ignore
+
 from sync_helpers import (
     get_buck_slip_config,
     get_prompt_template,
     get_tokenizer,
-    # get_text_splitter,
     get_api_client,
+    get_jinja2_environment,
     get_file_contents,
     get_output_filename,
     insert_buckslip_into_result,
     write_output_file,
 )
-from async_helpers import enter_recursion
+from async_helpers import do_the_work
 
 
 # Dataclass for commandline arguments
@@ -26,6 +26,7 @@ from async_helpers import enter_recursion
 class CommandlineArguments:
     config: str
     prompt: str
+    mode: str
     file: str
 
 
@@ -39,6 +40,12 @@ async def main(my_args: CommandlineArguments) -> None:
     # Check if all files given on the command line do exist
     # error out if not.
     # tbc.
+
+    # Check if summarizing mode is understood.
+    mode = my_args.mode
+    while mode not in ["hm"]:
+        ic("ERROR: mode {mode} not implemented.")
+        sys.exit(1)
 
     # Initialize buck_slip dict
     config_filename = my_args.config
@@ -59,6 +66,9 @@ async def main(my_args: CommandlineArguments) -> None:
     # Get OpenAI-compatible API
     buck_slip["api_client"] = get_api_client(buck_slip)
 
+    # Get Jinja2 environment
+    buck_slip["jinja2_env"] = get_jinja2_environment()
+
     # Determine input file name
     input_filename = my_args.file
     buck_slip["input_filename"] = input_filename
@@ -72,16 +82,13 @@ async def main(my_args: CommandlineArguments) -> None:
 
     # Initialize runtime variables
     result = {}
-    recursion_depth = 0
     ic("Init complete.")
 
     # Measure beginning of recursive summarization
     time_t0 = perf_counter()
 
     # Enter recursion
-    summary = await enter_recursion(
-        sample_text, recursion_depth, buck_slip, "summarize"
-    )
+    summary = await do_the_work(sample_text, buck_slip, mode, 0)
 
     # Measure ending of recursive summarization
     time_t1 = perf_counter()
@@ -116,6 +123,13 @@ if __name__ == "__main__":
         type=str,
         default="prompt.yaml",
         help="use prompt template (default prompt.yaml)",
+    )
+    parser.add_argument(
+        "-m",
+        "--mode",
+        type=str,
+        default="hm",
+        help="mode (default hm)",
     )
     parser.add_argument(
         "-f",
