@@ -210,8 +210,9 @@ def find_shortest_pair(elements) -> tuple[int, int]:
     min_index = 0
     for i, result in enumerate(elements):
         if i < last_index:
-            if len(result) < min_length:
-                min_length = len(result)
+            sum_of_chars = len(result) + len(elements[i + 1])
+            if sum_of_chars < min_length:
+                min_length = sum_of_chars
                 min_index = i
     return min_index, min_index + 1
 
