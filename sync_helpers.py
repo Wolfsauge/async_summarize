@@ -5,6 +5,7 @@ import json
 import math
 from typing import Iterable, Tuple, TypeVar
 import yaml
+
 # from tqdm import tqdm  # type: ignore
 # import rich.progress
 import httpx
@@ -52,9 +53,7 @@ def get_buck_slip_config(buck_slip_filename: str) -> dict:
 def get_prompt_template(prompt_template_filename: str) -> str:
     try:
         ic(prompt_template_filename)
-        with open(
-            prompt_template_filename, "r", encoding="utf-8"
-        ) as file:
+        with open(prompt_template_filename, "r", encoding="utf-8") as file:
             prompt_template = yaml.safe_load(file)
             prompt_template = prompt_template["prompt_templates"]
         # Create enum of tasks (summarize, merge)
@@ -88,11 +87,11 @@ def get_tokenizer(buck_slip: dict) -> LlamaTokenizerFast:
 def get_text_splitter(
     buck_slip: dict, custom_chunk_size: int, custom_chunk_overlap: int
 ) -> TextSplitter:
-    if custom_chunk_size is None:
-        custom_chunk_size = buck_slip["chunk_size"]
+    # if custom_chunk_size is None:
+    #     custom_chunk_size = buck_slip["chunk_size"]
 
-    if custom_chunk_overlap is None:
-        custom_chunk_overlap = buck_slip["chunk_overlap"]
+    # if custom_chunk_overlap is None:
+    #     custom_chunk_overlap = buck_slip["chunk_overlap"]
 
     batched_tokenization = buck_slip["use_batched_tokenization"]
 
@@ -205,6 +204,18 @@ def power_log(my_x: int) -> int:
     return 2 ** (math.ceil(math.log(my_x, 2)))
 
 
+def find_shortest_pair(elements) -> tuple[int, int]:
+    last_index = len(elements) - 1
+    min_length = len(elements[0])
+    min_index = 0
+    for i, result in enumerate(elements):
+        if i < last_index:
+            if len(result) < min_length:
+                min_length = len(result)
+                min_index = i
+    return min_index, min_index + 1
+
+
 def find_longest_element_index(elements) -> int:
     max_length = 0
     max_index = 0
@@ -213,3 +224,16 @@ def find_longest_element_index(elements) -> int:
             max_length = len(result)
             max_index = i
     return max_index
+
+
+def calc_custom_chunking_parameters(
+    length_of_chunk_in_tokens: int, buck_slip: dict
+) -> tuple[int, int]:
+    my_divisor = math.ceil(length_of_chunk_in_tokens / buck_slip["chunk_size"])
+    my_divisor = power_log(my_divisor)
+    my_custom_chunk_size = math.ceil(length_of_chunk_in_tokens / my_divisor)
+    my_custom_chunk_size = math.ceil(my_custom_chunk_size * 1.10)
+
+    my_custom_chunk_overlap = math.ceil(my_custom_chunk_size * 0.1)
+
+    return my_custom_chunk_size, my_custom_chunk_overlap

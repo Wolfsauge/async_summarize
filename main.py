@@ -60,9 +60,6 @@ async def main(my_args: CommandlineArguments) -> None:
     # Get tokenizer
     buck_slip["tokenizer"] = get_tokenizer(buck_slip)
 
-    # # Get text splitter
-    # buck_slip["text_splitter"] = get_text_splitter(buck_slip)
-
     # Get OpenAI-compatible API
     buck_slip["api_client"] = get_api_client(buck_slip)
 
@@ -88,7 +85,7 @@ async def main(my_args: CommandlineArguments) -> None:
     time_t0 = perf_counter()
 
     # Enter recursion
-    summary = await do_the_work(sample_text, buck_slip, mode, 0)
+    summary = await do_the_work(sample_text, buck_slip, mode)
 
     # Measure ending of recursive summarization
     time_t1 = perf_counter()
