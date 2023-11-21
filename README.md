@@ -11,7 +11,7 @@ The Python [httpx](https://www.python-httpx.org/) module manages the concurrency
 
 # Approach
 
-For now, this script uses the _hierarchical merging_ approach, similar to the descriptions in the paper "BooookScore: A systematic exploration of book-length summarization in the era of LLMs" by Yapei Chang, Kyle Lo, Tanya Goyal, Mohit Iyyer, [PDF](https://arxiv.org/pdf/2310.00785.pdf).
+For now, this script uses a simplified and badly implemented version of the _hierarchical merging_ approach, similar to the descriptions in the paper "BooookScore: A systematic exploration of book-length summarization in the era of LLMs" by Yapei Chang, Kyle Lo, Tanya Goyal, Mohit Iyyer, [PDF](https://arxiv.org/pdf/2310.00785.pdf).
 
 The following figure, from page 3 of this paper, is showing the main steps of the algorithm in the _left_ diagram.
 
@@ -19,6 +19,7 @@ The following figure, from page 3 of this paper, is showing the main steps of th
 
 ## Mathematical concepts
 The following mathematical concepts might be helpful in adressing the computational challenges.
+
 * perfect binary tree theorems
 
 > A perfect binary tree is a binary tree in which all interior nodes have two children and all leaves have the same depth or same level (the level of a node defined as the number of edges or links from the root node to a node).[18] A perfect binary tree is a full binary tree. (Wikipedia on [Binary tree](https://en.wikipedia.org/wiki/Binary_tree))
@@ -30,7 +31,7 @@ Also see the NIST page on [perfect binary trees](https://xlinux.nist.gov/dads/HT
 
 ## Please note
 At the time of writing:
-- ~~`async_summarize` uses _the same_ prompt for the summarizing **and** for the merging steps and implements __only a simplified version__ of the the hierarchical merging approach (the hierarchical merging algorithm uses three distinct steps and different prompts to achieve the result, see the PDF linked above for more details)~~ two different prompts have been implemented (summarize and merge)
+- `async_summarize` ~~uses _the same_ prompt for the summarizing **and** for the merging steps and~~ implements __only a simplified version__ of the the hierarchical merging approach. The hierarchical merging algorithm uses three distinct steps and different prompts to achieve the result, see the PDF linked above for more details. Two different prompts have been implemented (summarize and merge).
 - the _incremental updating_ approach is still to be implemented
 
 
