@@ -66,6 +66,9 @@ async def main(my_args: CommandlineArguments) -> None:
     # Get Jinja2 environment
     buck_slip["jinja2_env"] = get_jinja2_environment()
 
+    # Get lock
+    buck_slip["lock"] = asyncio.Lock()
+
     # Determine input file name
     input_filename = my_args.file
     buck_slip["input_filename"] = input_filename

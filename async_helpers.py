@@ -8,7 +8,7 @@ from sync_helpers import (
     get_length_of_chunk_in_tokens,
     get_text_splitter,
     grouped,
-    find_shortest_pair,
+    find_chunk_pair_with_minimal_size,
     find_longest_element_index,
     calc_custom_chunking_parameters,
 )
@@ -77,7 +77,11 @@ async def get_completion(buck_slip: dict, task: str, **kwargs) -> str:
 
 
 async def do_chunking_step(my_chunk: str, buck_slip: dict) -> list:
-    chunks = buck_slip["text_splitter"].split_text(my_chunk)
+    lock = buck_slip["lock"]
+    tqdm.write(f"Acquired {lock}.")
+    async with lock:
+        chunks = buck_slip["text_splitter"].split_text(my_chunk)
+    tqdm.write(f"Released {lock}.")
 
     return chunks
 
@@ -111,7 +115,12 @@ async def split_further(partial_results: list, my_pos: int, buck_slip: dict) -> 
     ic(my_len_list)
 
     my_chunk = partial_results[my_pos]
-    length_of_chunk_in_tokens = get_length_of_chunk_in_tokens(my_chunk, buck_slip)
+
+    lock = buck_slip["lock"]
+    tqdm.write(f"Acquired {lock}.")
+    async with lock:
+        length_of_chunk_in_tokens = get_length_of_chunk_in_tokens(my_chunk, buck_slip)
+    tqdm.write(f"Released {lock}.")
 
     my_custom_chunk_size = length_of_chunk_in_tokens
     my_custom_chunk_overlap = 0
@@ -165,19 +174,31 @@ async def do_merging_step(partial_results: list, buck_slip: dict) -> str:
         # While we do not have even number of elements, we need to amend
         amend_counter = 0
 
+        # Make sure we have an even number of chunks before we start merging
         while ((len(partial_results) % 2) != 0) and amend_counter < 10:
-            # Minify
-            my_pos1, my_pos2 = find_shortest_pair(partial_results)
-            ic(my_pos1)
-            ic(my_pos2)
+            # Find pair of chunks, which, concatenated together will yield the
+            # smallest sum
+            my_pos1, my_pos2 = find_chunk_pair_with_minimal_size(partial_results)
 
-            len_t_pos1 = get_length_of_chunk_in_tokens(partial_results[my_pos1], buck_slip)
-            len_t_pos2 = get_length_of_chunk_in_tokens(partial_results[my_pos2], buck_slip)
-            ic(len_t_pos1)
-            ic(len_t_pos2)
+            lock = buck_slip["lock"]
+            tqdm.write(f"Acquired {lock}.")
+            async with lock:
+                len_t_pos1 = get_length_of_chunk_in_tokens(
+                    partial_results[my_pos1], buck_slip
+                )
+                len_t_pos2 = get_length_of_chunk_in_tokens(
+                    partial_results[my_pos2], buck_slip
+                )
+            tqdm.write(f"Released {lock}.")
+            len_c_pos1 = len(partial_results[my_pos1])
+            len_c_pos2 = len(partial_results[my_pos2])
 
             # First we try to merge the smallest chunk with its adjacent chunk
             if (len_t_pos1 + len_t_pos2) <= buck_slip["chunk_size"]:
+                tqdm.write(
+                    f"Merging chunk #{my_pos1} ({len_c_pos1}/{len_t_pos1} chars/tokens) and #{my_pos2} ({len_c_pos2}/{len_t_pos2}  chars/tokens)."
+                )
+
                 new_chunk, _ = await merge_elements(
                     (partial_results[my_pos1], partial_results[my_pos2]), buck_slip, 0
                 )
@@ -197,7 +218,9 @@ async def do_merging_step(partial_results: list, buck_slip: dict) -> str:
                 my_lei = find_longest_element_index(partial_results)
 
                 # Split longest element further
-                partial_results = await split_further(partial_results, my_lei, buck_slip)
+                partial_results = await split_further(
+                    partial_results, my_lei, buck_slip
+                )
                 ic("Splitting further done.")
                 amend_counter += 1
 
@@ -232,7 +255,13 @@ async def do_merging_step(partial_results: list, buck_slip: dict) -> str:
 async def do_the_work(chunk: str, buck_slip: dict, mode: str) -> str:
     if mode == "hm":
         tqdm.write("Start summarizing with the method of hierarchical merging.")
-        length_of_chunk_in_tokens = get_length_of_chunk_in_tokens(chunk, buck_slip)
+
+        lock = buck_slip["lock"]
+        tqdm.write(f"Acquired {lock}.")
+        async with lock:
+            length_of_chunk_in_tokens = get_length_of_chunk_in_tokens(chunk, buck_slip)
+        tqdm.write(f"Released {lock}.")
+
         if length_of_chunk_in_tokens >= buck_slip["chunk_size"]:
             # We need to split the input into chunks
             custom_chunk_size, custom_chunk_overlap = calc_custom_chunking_parameters(

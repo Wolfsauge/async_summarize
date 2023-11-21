@@ -87,12 +87,6 @@ def get_tokenizer(buck_slip: dict) -> LlamaTokenizerFast:
 def get_text_splitter(
     buck_slip: dict, custom_chunk_size: int, custom_chunk_overlap: int
 ) -> TextSplitter:
-    # if custom_chunk_size is None:
-    #     custom_chunk_size = buck_slip["chunk_size"]
-
-    # if custom_chunk_overlap is None:
-    #     custom_chunk_overlap = buck_slip["chunk_overlap"]
-
     batched_tokenization = buck_slip["use_batched_tokenization"]
 
     if batched_tokenization is True:
@@ -107,7 +101,6 @@ def get_text_splitter(
             chunk_overlap=custom_chunk_overlap,
             length_function=lambda x: get_length_of_chunk_in_tokens(x, buck_slip),
         )
-    ic(type(text_splitter))
 
     return text_splitter
 
@@ -177,10 +170,12 @@ def insert_buckslip_into_result(result: dict, buck_slip: dict) -> dict:
     buck_slip["text_splitter_str"] = str(buck_slip["text_splitter"])
     buck_slip["api_client_str"] = str(buck_slip["api_client"])
     buck_slip["jinja2_env_str"] = str(buck_slip["jinja2_env"])
+    buck_slip["lock_str"] = str(buck_slip["lock"])
     del buck_slip["tokenizer"]
     del buck_slip["text_splitter"]
     del buck_slip["api_client"]
     del buck_slip["jinja2_env"]
+    del buck_slip["lock"]
 
     # Insert stringified and thus JSON serializable buck slip into the result dict
     result["buck_slip"] = buck_slip
@@ -204,7 +199,7 @@ def power_log(my_x: int) -> int:
     return 2 ** (math.ceil(math.log(my_x, 2)))
 
 
-def find_shortest_pair(elements) -> tuple[int, int]:
+def find_chunk_pair_with_minimal_size(elements) -> tuple[int, int]:
     last_index = len(elements) - 1
     min_length = len(elements[0])
     min_index = 0
