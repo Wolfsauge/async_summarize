@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import os
 import sys
 import argparse
 import asyncio
@@ -71,7 +72,7 @@ async def main(my_args: CommandlineArguments) -> None:
 
     # Determine input file name
     input_filename = my_args.file
-    buck_slip["input_filename"] = input_filename
+    buck_slip["input_filename"] = os.path.basename(input_filename)
     ic(input_filename)
 
     # Get the input
