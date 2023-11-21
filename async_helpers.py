@@ -1,24 +1,53 @@
 import sys
 import asyncio
-import jinja2
+import math
+from tqdm.asyncio import tqdm  # type: ignore
+
 from icecream import ic  # type: ignore
-from sync_helpers import get_length_of_chunk_in_tokens
+from sync_helpers import (
+    get_length_of_chunk_in_tokens,
+    get_text_splitter,
+    grouped,
+    find_shortest_pair,
+    find_longest_element_index,
+    calc_custom_chunking_parameters,
+)
 
 
-async def get_completion(my_chunk: str, buck_slip: dict) -> str:
-    environment = jinja2.Environment()
-    template = environment.from_string(str(buck_slip["prompt_template"]))
-    my_prompt = template.render(prompt=my_chunk)
+async def get_completion(buck_slip: dict, task: str, **kwargs) -> str:
+    template = buck_slip["jinja2_env"].from_string(buck_slip["prompt_templates"][task])
+
+    if task == "summarize":
+        chunk = kwargs["chunk"]
+        if isinstance(chunk, str):
+            my_prompt = template.render(prompt=chunk)
+        else:
+            ic(f"ERROR: function call error, task: {task}, kwargs={kwargs}.")
+            sys.exit(1)
+    elif task == "merge":
+        first_element = kwargs["first_element"]
+        second_element = kwargs["second_element"]
+        if isinstance(first_element, str) and isinstance(second_element, str):
+            my_prompt = template.render(
+                first_element=first_element, second_element=second_element
+            )
+        else:
+            ic(f"ERROR: function call error, task: {task}, kwargs={kwargs}.")
+            sys.exit(1)
+    else:
+        ic(f"ERROR: function call error, task: {task}, kwargs={kwargs}.")
+        sys.exit(1)
 
     bad_counter = 0
     attempt_counter = 0
 
     while attempt_counter <= buck_slip["max_completion_retries"]:
+        my_temperature = buck_slip["temperature"] + attempt_counter * 0.1
         completion = await buck_slip["api_client"].completions.create(
             model=buck_slip["model_local_identifier"],
             prompt=my_prompt,
             max_tokens=buck_slip["max_tokens"],
-            temperature=buck_slip["temperature"],
+            temperature=my_temperature,
         )
 
         attempt_counter += 1
@@ -47,43 +76,176 @@ async def get_completion(my_chunk: str, buck_slip: dict) -> str:
     return completion.choices[0].text
 
 
-async def get_async_chunking(my_chunk: str, buck_slip: dict) -> list:
+async def do_chunking_step(my_chunk: str, buck_slip: dict) -> list:
     chunks = buck_slip["text_splitter"].split_text(my_chunk)
 
     return chunks
 
 
-async def enter_recursion(my_chunk: str, recursion_depth: int, buck_slip: dict) -> str:
-    recursion_depth += 1
-    ic(recursion_depth)
+async def merge_elements(elements, buck_slip: dict, pindex: int) -> tuple[str, int]:
+    first_element, second_element = elements
 
-    # length_of_chunk_in_chars = get_length_of_chunk_in_chars(my_chunk)
+    intermediate_merge_result = await get_completion(
+        buck_slip, "merge", first_element=first_element, second_element=second_element
+    )
+    intermediate_merge_result = str(intermediate_merge_result).strip()
+
+    return intermediate_merge_result, pindex
+
+
+async def summarize_element(chunk, buck_slip: dict, pindex: int) -> tuple[str, int]:
+    intermediate_merge_result = await get_completion(
+        buck_slip, "summarize", chunk=chunk
+    )
+    intermediate_merge_result = str(intermediate_merge_result).strip()
+
+    return intermediate_merge_result, pindex
+
+
+async def split_further(partial_results: list, my_pos: int, buck_slip: dict) -> list:
+    ic("Split further.")
+    ic(my_pos)
+    ic(len(partial_results))
+
+    my_len_list = [len(_) for _ in partial_results]
+    ic(my_len_list)
+
+    my_chunk = partial_results[my_pos]
     length_of_chunk_in_tokens = get_length_of_chunk_in_tokens(my_chunk, buck_slip)
 
-    if length_of_chunk_in_tokens >= buck_slip["chunk_size"]:
-        # We need to split
-        chunks = await get_async_chunking(my_chunk, buck_slip)
-        ic(len(chunks))
+    my_custom_chunk_size = length_of_chunk_in_tokens
+    my_custom_chunk_overlap = 0
+    buck_slip["text_splitter"] = get_text_splitter(
+        buck_slip, my_custom_chunk_size, my_custom_chunk_overlap
+    )
 
-        partial_results = []
+    chunks = await do_chunking_step(my_chunk, buck_slip)
+    ic(len(chunks))
+    my_len_list = [len(_) for _ in chunks]
+    ic(my_len_list)
 
-        partial_results = await asyncio.gather(
-            *[
-                enter_recursion(partial_chunk, recursion_depth, buck_slip)
-                for partial_chunk in chunks
-            ]
+    partial_results = partial_results[:my_pos] + chunks + partial_results[my_pos + 1 :]
+    ic(len(partial_results))
+
+    my_len_list = [len(_) for _ in partial_results]
+    ic(my_len_list)
+
+    return partial_results
+
+
+async def do_summarizing_step(chunks: list, buck_slip: dict) -> list:
+    tqdm.write("Start summarizing.")
+    partial_results_tasks = [
+        summarize_element(partial_chunk, buck_slip, pindex)
+        for pindex, partial_chunk in enumerate(chunks)
+    ]
+    partial_results = [None] * len(chunks)
+
+    for my_func in tqdm(
+        asyncio.as_completed(partial_results_tasks),
+        total=len(partial_results_tasks),
+    ):
+        result, returned_index = await my_func
+        tqdm.write(
+            f"Received summarize result {returned_index}, length {len(result)} characters."
         )
+        partial_results[returned_index] = result
+    return partial_results
 
-        my_result_string = "\n".join(partial_results)
 
-        intermediate_result = await enter_recursion(
-            my_result_string, recursion_depth, buck_slip
-        )
-    else:
-        # We can summarize
-        intermediate_result = await get_completion(my_chunk, buck_slip)
-        ic(len(str(intermediate_result)))
+async def do_merging_step(partial_results: list, buck_slip: dict) -> str:
+    tqdm.write("Start merging.")
+    merging_round = 0
 
-    my_result = str(intermediate_result).strip()
+    # While we do have more than two chunks to merge
+    while len(partial_results) > 1:
+        merging_round += 1
+        tqdm.write(f"Merging round #{merging_round}.")
 
-    return my_result
+        # While we do not have even number of elements, we need to amend
+        amend_counter = 0
+
+        while ((len(partial_results) % 2) != 0) and amend_counter < 10:
+            # Minify
+            my_pos1, my_pos2 = find_shortest_pair(partial_results)
+            ic(my_pos1)
+            ic(my_pos2)
+
+            len_t_pos1 = get_length_of_chunk_in_tokens(partial_results[my_pos1], buck_slip)
+            len_t_pos2 = get_length_of_chunk_in_tokens(partial_results[my_pos2], buck_slip)
+            ic(len_t_pos1)
+            ic(len_t_pos2)
+
+            # First we try to merge the smallest chunk with its adjacent chunk
+            if (len_t_pos1 + len_t_pos2) <= buck_slip["chunk_size"]:
+                new_chunk, _ = await merge_elements(
+                    (partial_results[my_pos1], partial_results[my_pos2]), buck_slip, 0
+                )
+                partial_results[my_pos1] = new_chunk
+                # ic(partial_results[my_pos1])
+                # ic(partial_results[my_pos2])
+                # ic(new_chunk)
+                del partial_results[my_pos2]
+                # ic("Minify done.")
+                tqdm.write("The smallest chunk was treated.")
+                amend_counter += 1
+            else:
+                # We can't reduce the number of chunks, so we try to solve the problem
+                # by splitting the largest chunk again
+
+                # Find longest element
+                my_lei = find_longest_element_index(partial_results)
+
+                # Split longest element further
+                partial_results = await split_further(partial_results, my_lei, buck_slip)
+                ic("Splitting further done.")
+                amend_counter += 1
+
+        # We have an even number of chunks to merge
+
+        # Iterate pair-wise through the set of chunks and merge them asynchronously
+        partial_results_tasks = [
+            merge_elements(elements, buck_slip, pindex)
+            for pindex, elements in enumerate(grouped(partial_results, 2))
+        ]
+
+        # Prepare synchronized result set
+        partial_results = [None] * math.ceil(len(partial_results) / 2)
+
+        # Await asynchronous merge tasks completion
+        for my_func in tqdm(
+            asyncio.as_completed(partial_results_tasks),
+            total=len(partial_results_tasks),
+        ):
+            result, returned_index = await my_func
+            tqdm.write(
+                f"Received merge result {returned_index}, length {len(result)} characters."
+            )
+            # Once a task has completed, insert its result into the correct
+            # position in the synchronized result set
+            partial_results[returned_index] = result
+
+        # We are done merging this round
+    return partial_results[0]
+
+
+async def do_the_work(chunk: str, buck_slip: dict, mode: str) -> str:
+    if mode == "hm":
+        tqdm.write("Start summarizing with the method of hierarchical merging.")
+        length_of_chunk_in_tokens = get_length_of_chunk_in_tokens(chunk, buck_slip)
+        if length_of_chunk_in_tokens >= buck_slip["chunk_size"]:
+            # We need to split the input into chunks
+            custom_chunk_size, custom_chunk_overlap = calc_custom_chunking_parameters(
+                length_of_chunk_in_tokens, buck_slip
+            )
+            buck_slip["text_splitter"] = get_text_splitter(
+                buck_slip, custom_chunk_size, custom_chunk_overlap
+            )
+            chunks = await do_chunking_step(chunk, buck_slip)
+            partial_results = await do_summarizing_step(chunks, buck_slip)
+            result = await do_merging_step(partial_results, buck_slip)
+        else:
+            # We can summarize the input directly
+            result, _ = await summarize_element(chunk, buck_slip, 0)
+
+    return result
