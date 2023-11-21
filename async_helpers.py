@@ -203,12 +203,7 @@ async def do_merging_step(partial_results: list, buck_slip: dict) -> str:
                     (partial_results[my_pos1], partial_results[my_pos2]), buck_slip, 0
                 )
                 partial_results[my_pos1] = new_chunk
-                # ic(partial_results[my_pos1])
-                # ic(partial_results[my_pos2])
-                # ic(new_chunk)
                 del partial_results[my_pos2]
-                # ic("Minify done.")
-                tqdm.write("The smallest chunk was treated.")
                 amend_counter += 1
             else:
                 # We can't reduce the number of chunks, so we try to solve the problem
@@ -217,14 +212,16 @@ async def do_merging_step(partial_results: list, buck_slip: dict) -> str:
                 # Find longest element
                 my_lei = find_longest_element_index(partial_results)
 
+                tqdm.write(f"Splitting the longest element #{my_lei} further.")
+
                 # Split longest element further
                 partial_results = await split_further(
                     partial_results, my_lei, buck_slip
                 )
-                ic("Splitting further done.")
+
                 amend_counter += 1
 
-        # We have an even number of chunks to merge
+        # We have an even number of chunks to merge now
 
         # Iterate pair-wise through the set of chunks and merge them asynchronously
         partial_results_tasks = [
