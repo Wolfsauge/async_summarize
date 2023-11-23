@@ -5,19 +5,33 @@ An asynchronous summarization script.
 
 This script summarizes the input file using a large language model API. If the input exceeds the context of the LLM, it will be split using the [LangChain](https://www.langchain.com) [RecursiveTextSplitter](https://python.langchain.com/docs/modules/data_connection/document_transformers/text_splitters/recursive_text_splitter) class.
 
-The LangChain text splitter class uses Huggingface transformers [PretrainedTokenizerFast](https://huggingface.co/docs/transformers/fast_tokenizers) and batched tokenization.
+The LangChain text splitter class uses Huggingface transformers [PretrainedTokenizerFast](https://huggingface.co/docs/transformers/fast_tokenizers) ~~and batched tokenization~~.
 
 The Python [httpx](https://www.python-httpx.org/) module manages the concurrency towards the API via the `httpx_max_connections` and `httpx_max_keepalive_connections` parameters and the [OpenAI Python Library](https://github.com/openai/openai-python/).
 
 # Approach
 
-This script uses the _hierarchical merging_ approach, similar to the descriptions in the paper "BooookScore: A systematic exploration of book-length summarization in the era of LLMs" by Yapei Chang, Kyle Lo, Tanya Goyal, Mohit Iyyer, [PDF](https://arxiv.org/pdf/2310.00785.pdf). The following figure, from page 3 of this paper, is showing the main steps of the algorithm in the _left_ diagram.
+For now, this script uses a simplified and badly implemented version of the _hierarchical merging_ approach, similar to the descriptions in the paper "BooookScore: A systematic exploration of book-length summarization in the era of LLMs" by Yapei Chang, Kyle Lo, Tanya Goyal, Mohit Iyyer, [PDF](https://arxiv.org/pdf/2310.00785.pdf).
+
+The following figure, from page 3 of this paper, is showing the main steps of the algorithm in the _left_ diagram.
 
 ![Figure 1](images/figure-1.png)
 
+## Mathematical concepts
+The following mathematical concepts might be helpful in adressing the computational challenges.
+
+* perfect binary tree theorems
+
+> A perfect binary tree is a binary tree in which all interior nodes have two children and all leaves have the same depth or same level (the level of a node defined as the number of edges or links from the root node to a node).[18] A perfect binary tree is a full binary tree. (Wikipedia on [Binary tree](https://en.wikipedia.org/wiki/Binary_tree))
+
+Also see the NIST page on [perfect binary trees](https://xlinux.nist.gov/dads/HTML/perfectBinaryTree.html).
+
+* standard Young tableau for triangular partition https://en.wikipedia.org/wiki/Young_tableau
+* hook length formula https://en.wikipedia.org/wiki/Hook_length_formula
+
 ## Please note
 At the time of writing:
-- `async_summarize` uses _the same_ prompt for the summarizing **and** for the merging steps and implements __only a simplified version__ of the the hierarchical merging approach (the hierarchical merging algorithm uses three distinct steps and different prompts to achieve the result, see the PDF linked above for more details)
+- `async_summarize` ~~uses _the same_ prompt for the summarizing **and** for the merging steps and~~ implements __only a simplified version__ of the the hierarchical merging approach. The hierarchical merging algorithm uses three distinct steps and different prompts to achieve the result, see the PDF linked above for more details. Two different prompts have been implemented (summarize and merge).
 - the _incremental updating_ approach is still to be implemented
 
 
@@ -76,10 +90,10 @@ $ export TOKENIZERS_PARALLELISM=true
 * GitHub transformers Issue [Tokenizers throwing warning "The current process just got forked, Disabling parallelism to avoid deadlocks.. To disable this warning, please explicitly set TOKENIZERS_PARALLELISM=(true | false)" #5486](https://github.com/huggingface/transformers/issues/5486#issuecomment-654232343)
 * Stack Overflow, [How to disable TOKENIZERS_PARALLELISM=(true | false) warning?](https://stackoverflow.com/questions/62691279/how-to-disable-tokenizers-parallelism-true-false-warning/72926996#72926996), written Jul 10, 2022
 
-## Batched Tokenization
-* The script enables batched tokenization using Huggingface transformers fast tokenizers.
+## ~~Batched~~ Tokenization
+~~* The script enables batched tokenization using Huggingface transformers fast tokenizers.~~
 * The tokenization computations are cpu-bound and computationally expensive.
-* Batched tokenization happens locally on the inference client.
+* the tokenization happens locally on the inference client.
 * The repeated, expensive tokenization steps are required for the chunk length computations inside the langchain text splitter class.
 
 ### Help to get the PR running in a Python .venv quickly
