@@ -583,3 +583,6 @@ pg84-analysis-jondurbin_airoboros-m-7b-3.1.2-0006.json:
     "tokenizer.is_fast": true,
     "summarize_duration_seconds": 448.4
 ```
+
+# Bugs
+- checking if input file exists, before running expensive functions

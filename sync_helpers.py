@@ -72,6 +72,11 @@ def get_tokenizer(buck_slip: dict) -> LlamaTokenizerFast:
     tokenizer = AutoTokenizer.from_pretrained(
         buck_slip["model_identifier"], use_fast=buck_slip["use_fast"]
     )
+    # Necessary for some models, needs
+    # flag in config.yaml
+    # tokenizer = AutoTokenizer.from_pretrained(
+    #     buck_slip["model_identifier"], use_fast=buck_slip["use_fast"], trust_remote_code=True
+    # )
     ic(type(tokenizer))
     ic(tokenizer.is_fast)
     buck_slip["tokenizer.is_fast"] = tokenizer.is_fast
