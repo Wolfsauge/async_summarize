@@ -1,0 +1,15 @@
+---
+async_summarize_shared_config:
+  api_base_url: http://localhost:8000/v1
+  hf_model_id: ""
+  max_connections: 30
+  max_keepalive_connections: 3
+  max_retries: 20
+  max_tokens: 6000
+  stop_sequence:
+    - ENDNOTES
+    - <|user|>
+    - "\n\n\n\n"
+  temperature: 0.0
+  tokenizer_is_fast: false
+  tokenizer_use_fast: true

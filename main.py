@@ -28,6 +28,7 @@ from icecream import ic  # type: ignore
 @dataclass
 class CommandlineArguments:
     url: str
+    config: str
     prompt: str
     file: str
 
@@ -52,7 +53,7 @@ def get_prompt_template(prompt_template_filename: str) -> str:
 
     except (IOError, OSError) as exception:
         ic(exception)
-        print("Exit.")
+        ic("Exit.")
         sys.exit(1)
 
     return prompt_template
@@ -389,20 +390,26 @@ def read_input_file(input_filename: str) -> str:
     return input_text
 
 
+def get_shared_config(my_args: CommandlineArguments) -> dict:
+    try:
+        ic(my_args.config)
+        with open(my_args.config, "r", encoding="utf-8-sig") as file:
+            shared_config = yaml.safe_load(file)
+            shared_config = shared_config["async_summarize_shared_config"]
+
+    except (IOError, OSError) as exception:
+        ic(exception)
+        ic("Exit.")
+        sys.exit(1)
+
+    shared_config["api_base_url"] = my_args.url
+
+    return shared_config
+
+
 async def get_buckslip(my_args: CommandlineArguments) -> BuckSlip:
-    # Default config
-    shared_config = {
-        "api_base_url": my_args.url,
-        "hf_model_id": "",
-        "tokenizer_use_fast": True,
-        "tokenizer_is_fast": False,
-        "max_retries": 20,
-        "temperature": 0.0,
-        "max_tokens": 6000,
-        "max_keepalive_connections": 3,
-        "max_connections": 30,
-        "stop_sequence": ["ENDNOTES", "<|user|>", "\n\n\n\n"],
-    }
+    # Get configuration from file
+    shared_config = get_shared_config(my_args)
 
     # Initial creation of buck slip object
     buckslip = BuckSlip(shared_config)
@@ -478,21 +485,28 @@ if __name__ == "__main__":
         "--url",
         type=str,
         default="http://localhost:8000/v1",
-        help="API base url (default: http://localhost:8000/v1).",
+        help="URL of OpenAI-compatible API (default: http://localhost:8000/v1).",
+    )
+    parser.add_argument(
+        "-c",
+        "--config",
+        type=str,
+        default="config.yaml",
+        help="configuration file (default config.yaml)",
     )
     parser.add_argument(
         "-p",
         "--prompt",
         type=str,
         default="prompt.yaml",
-        help="Jinja2 prompt template (default prompt.yaml)",
+        help="prompt template file (default prompt.yaml)",
     )
     parser.add_argument(
         "-f",
         "--file",
         type=str,
-        default="myfile.txt",
-        help="Input file to summarize (default: myfile.txt).",
+        default="input.txt",
+        help="input file (default: input.txt).",
     )
     parsed_args = CommandlineArguments(**vars(parser.parse_args()))
     asyncio.run(main(parsed_args))
