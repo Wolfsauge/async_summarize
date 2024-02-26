@@ -1,7 +1,0 @@
-prompt_template: |-
-  BEGININPUT
-  {{ prompt }}
-  ENDINPUT
-  BEGININSTRUCTION
-  Summarize the input in about 130 words.
-  ENDINSTRUCTION
