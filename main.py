@@ -389,7 +389,7 @@ def read_input_file(input_filename: str) -> str:
     return input_text
 
 
-async def main(my_args: CommandlineArguments) -> None:
+async def get_buckslip(my_args: CommandlineArguments) -> BuckSlip:
     # Default config
     shared_config = {
         "api_base_url": my_args.url,
@@ -439,6 +439,13 @@ async def main(my_args: CommandlineArguments) -> None:
     ic("Buck slip")
     ic(buckslip)
 
+    return buckslip
+
+
+async def main(my_args: CommandlineArguments) -> None:
+    # Get buckslip
+    buckslip = await get_buckslip(my_args)
+
     # Do some work
     await compute_pass(buckslip, "first_pass")
 
@@ -449,11 +456,12 @@ async def main(my_args: CommandlineArguments) -> None:
     await compute_pass(buckslip, "second_pass")
 
     # Show final result
-    print(
-        buckslip.shared_config["second_pass_generations"][
-            len(buckslip.shared_config["second_pass_generations"]) - 1
-        ]["completion_text"]
-    )
+    if len(buckslip.shared_config["second_pass_generations"]) > 1:
+        print(
+            buckslip.shared_config["second_pass_generations"][
+                len(buckslip.shared_config["second_pass_generations"]) - 1
+            ]["completion_text"]
+        )
 
     # Close httpx client
     if buckslip.httpx_client is not None:
