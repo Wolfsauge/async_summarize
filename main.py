@@ -12,6 +12,8 @@ import argparse
 from pathlib import Path
 import asyncio
 
+import os
+from dotenv import load_dotenv  # type: ignore
 import yaml
 import jinja2
 import httpx
@@ -21,8 +23,6 @@ from langchain.text_splitter import TextSplitter, RecursiveCharacterTextSplitter
 from tqdm import tqdm  # type: ignore
 
 from icecream import ic  # type: ignore
-
-API_KEY = "empty"
 
 
 @dataclass
@@ -116,9 +116,21 @@ def get_tokenizer(buckslip: BuckSlip) -> BuckSlip:
     return buckslip
 
 
+def get_api_key(variable_name: str) -> str | None:
+    load_dotenv()
+    api_key = os.getenv(variable_name)
+
+    if api_key is None:
+        print("ERROR: api key cannot be determined.")
+        print("Exit.")
+        sys.exit(1)
+
+    return api_key
+
+
 def get_api_client(buckslip: BuckSlip) -> BuckSlip:
     buckslip.api_client = AsyncOpenAI(
-        api_key=API_KEY,
+        api_key=buckslip.shared_config["api_key"],
         base_url=buckslip.shared_config["api_base_url"],
         http_client=buckslip.httpx_client,
     )
@@ -394,6 +406,9 @@ async def main(my_args: CommandlineArguments) -> None:
 
     # Initial creation of buck slip object
     buckslip = BuckSlip(shared_config)
+
+    # Get API key from .env variable
+    buckslip.shared_config["api_key"] = get_api_key("MY_ENV_VAR")
 
     # Determine input file and read it
     buckslip.shared_config["input_text"] = read_input_file(my_args.file)
