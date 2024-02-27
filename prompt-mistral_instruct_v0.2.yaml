@@ -1,0 +1,18 @@
+---
+prompt_templates:
+  first_pass: |-
+    <s>[INST] Please summarize the key points or the main ideas contained in the given text fragment. Keep the summary concise and clear, focusing on the essential information.
+
+    Text fragment:
+    {{ text }}
+    [/INST]
+
+  second_pass: |-
+    <s>[INST]: Please merge the previous summaries with the new summary fragment, ensuring that the context is maintained and the information flows smoothly. Keep the merged summary concise and clear, focusing on the essential ideas presented in all the fragments.
+
+    Previous summaries:
+    {{ context }}
+
+    New summary fragment:
+    {{ text }}
+    [/INST]
