@@ -20,6 +20,8 @@ import httpx
 from openai import AsyncOpenAI, types
 from transformers import AutoTokenizer, LlamaTokenizerFast  # type: ignore
 from langchain.text_splitter import TextSplitter, RecursiveCharacterTextSplitter
+from semantic_text_splitter import HuggingFaceTextSplitter  # type: ignore
+from tokenizers import Tokenizer  # type: ignore
 from tqdm import tqdm  # type: ignore
 
 from icecream import ic  # type: ignore
@@ -139,7 +141,7 @@ def get_api_client(buckslip: BuckSlip) -> BuckSlip:
     return buckslip
 
 
-def get_text_splitter(
+def get_langchain_text_splitter(
     buckslip, custom_chunk_size, custom_chunk_overlap
 ) -> TextSplitter:
     text_splitter = RecursiveCharacterTextSplitter.from_huggingface_tokenizer(
@@ -151,10 +153,27 @@ def get_text_splitter(
     return text_splitter
 
 
-def create_custom_chunking(
+def get_semantic_text_splitter() -> HuggingFaceTextSplitter:
+    tokenizer = Tokenizer.from_pretrained("bert-base-uncased")
+
+    text_splitter = HuggingFaceTextSplitter(tokenizer, trim_chunks=True)
+    ic(type(text_splitter))
+
+    return text_splitter
+
+
+def create_langchain_chunking(
     input_chunk: str, buckslip: BuckSlip, chunk_size, overlap
 ) -> list:
-    chunking = get_text_splitter(buckslip, chunk_size, overlap).split_text(input_chunk)
+    chunking = get_langchain_text_splitter(buckslip, chunk_size, overlap).split_text(
+        input_chunk
+    )
+
+    return chunking
+
+
+def create_semantic_chunking(input_chunk: str, chunk_size) -> list:
+    chunking = get_semantic_text_splitter().chunks(input_chunk, chunk_size)
 
     return chunking
 
@@ -183,14 +202,14 @@ def build_prompt(
 
 
 async def completions_create(
-    attempt_counter: int, prompt: str, buckslip: BuckSlip
+    prompt: str, temperature: float, buckslip: BuckSlip
 ) -> types.Completion:
     if buckslip.api_client is not None:
         completion = await buckslip.api_client.completions.create(
             model=buckslip.shared_config["hf_model_id"],
             prompt=prompt,
             max_tokens=buckslip.shared_config["max_tokens"],
-            temperature=buckslip.shared_config["temperature"] + attempt_counter * 0.1,
+            temperature=temperature,
             stop=buckslip.shared_config["stop_sequence"],
         )
 
@@ -217,7 +236,8 @@ async def create_single_generation(
     completion_attempts = []
 
     while attempt_counter <= buckslip.shared_config["max_retries"]:
-        completion = await completions_create(attempt_counter, prompt, buckslip)
+        temperature = buckslip.shared_config["temperature"] + attempt_counter * 0.1
+        completion = await completions_create(prompt, temperature, buckslip)
 
         completion_finish_reason = completion.choices[0].finish_reason
 
@@ -226,9 +246,7 @@ async def create_single_generation(
                 "chunk_index": chunk_index,
                 "completion_id": completion.id,
                 "max_tokens": int(buckslip.shared_config["max_tokens"]),
-                "temperature": float(
-                    buckslip.shared_config["temperature"] + attempt_counter * 0.1
-                ),
+                "temperature": temperature,
                 "finish_reason": completion_finish_reason,
                 "completion_text": completion.choices[0].text.strip(),
                 "completion_tokens": completion.usage.completion_tokens,
@@ -270,10 +288,14 @@ def read_list_from_json_file(my_filename: str) -> list:
 
 
 async def compute_first_pass(buckslip: BuckSlip) -> list:
-    # Acquire chunks
-    # chunks = create_custom_chunking(input_text, buckslip, 1024, 102)
-    chunks = create_custom_chunking(
-        buckslip.shared_config["input_text"], buckslip, 2048, 204
+    # Langchain chunking
+    # chunks = create_langchain_chunking(
+    #     buckslip.shared_config["input_text"], buckslip, 2048, 204
+    # )
+
+    # Semantic chunking
+    chunks = create_semantic_chunking(
+        buckslip.shared_config["input_text"], 512
     )
 
     # Prepare generations
