@@ -172,8 +172,10 @@ def create_langchain_chunking(
     return chunking
 
 
-def create_semantic_chunking(input_chunk: str, chunk_size) -> list:
-    chunking = get_semantic_text_splitter().chunks(input_chunk, chunk_size)
+def create_semantic_chunking(input_chunk: str, chunk_size: tuple) -> list:
+    chunking = get_semantic_text_splitter().chunks(
+        input_chunk, chunk_capacity=chunk_size
+    )
 
     return chunking
 
@@ -294,9 +296,7 @@ async def compute_first_pass(buckslip: BuckSlip) -> list:
     # )
 
     # Semantic chunking
-    chunks = create_semantic_chunking(
-        buckslip.shared_config["input_text"], 512
-    )
+    chunks = create_semantic_chunking(buckslip.shared_config["input_text"], (8192, 22000))
 
     # Prepare generations
     generations: list[dict[Any, Any]]
