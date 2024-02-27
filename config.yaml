@@ -5,7 +5,7 @@ async_summarize_shared_config:
   max_connections: 30
   max_keepalive_connections: 3
   max_retries: 20
-  max_tokens: 6000
+  max_tokens: 2000
   stop_sequence:
     - ENDNOTES
     - <|user|>
