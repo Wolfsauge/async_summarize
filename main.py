@@ -309,7 +309,11 @@ async def compute_first_pass(buckslip: BuckSlip) -> list:
 
     # Semantic chunking
     chunks = create_semantic_chunking(
-        buckslip.shared_config["input_text"], (8192, 16384)
+        buckslip.shared_config["input_text"],
+        (
+            buckslip.shared_config["semantic_splitter_lo_threshold"],
+            buckslip.shared_config["semantic_splitter_hi_threshold"],
+        ),
     )
 
     # Prepare generations
@@ -454,7 +458,7 @@ def determine_sessiondir(buckslip: BuckSlip, output_dir: str) -> BuckSlip:
         print("Exit.")
         sys.exit(1)
 
-    my_workdir = str.join('-', (my_normalized_name, now_isoformat))
+    my_workdir = str.join("-", (my_normalized_name, now_isoformat))
     my_sessiondir = os.path.join(output_dir, my_workdir)
 
     buckslip.shared_config["sessiondir"] = my_sessiondir
