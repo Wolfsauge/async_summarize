@@ -12,22 +12,25 @@ import argparse
 from pathlib import Path
 import asyncio
 
+import os
+from dotenv import load_dotenv  # type: ignore
 import yaml
 import jinja2
 import httpx
 from openai import AsyncOpenAI, types
 from transformers import AutoTokenizer, LlamaTokenizerFast  # type: ignore
 from langchain.text_splitter import TextSplitter, RecursiveCharacterTextSplitter
+from semantic_text_splitter import HuggingFaceTextSplitter  # type: ignore
+from tokenizers import Tokenizer  # type: ignore
 from tqdm import tqdm  # type: ignore
 
 from icecream import ic  # type: ignore
-
-API_KEY = "empty"
 
 
 @dataclass
 class CommandlineArguments:
     url: str
+    config: str
     prompt: str
     file: str
 
@@ -52,7 +55,7 @@ def get_prompt_template(prompt_template_filename: str) -> str:
 
     except (IOError, OSError) as exception:
         ic(exception)
-        print("Exit.")
+        ic("Exit.")
         sys.exit(1)
 
     return prompt_template
@@ -116,9 +119,21 @@ def get_tokenizer(buckslip: BuckSlip) -> BuckSlip:
     return buckslip
 
 
+def get_api_key(variable_name: str) -> str | None:
+    load_dotenv()
+    api_key = os.getenv(variable_name)
+
+    if api_key is None:
+        print("ERROR: api key cannot be determined.")
+        print("Exit.")
+        sys.exit(1)
+
+    return api_key
+
+
 def get_api_client(buckslip: BuckSlip) -> BuckSlip:
     buckslip.api_client = AsyncOpenAI(
-        api_key=API_KEY,
+        api_key=buckslip.shared_config["api_key"],
         base_url=buckslip.shared_config["api_base_url"],
         http_client=buckslip.httpx_client,
     )
@@ -126,7 +141,7 @@ def get_api_client(buckslip: BuckSlip) -> BuckSlip:
     return buckslip
 
 
-def get_text_splitter(
+def get_langchain_text_splitter(
     buckslip, custom_chunk_size, custom_chunk_overlap
 ) -> TextSplitter:
     text_splitter = RecursiveCharacterTextSplitter.from_huggingface_tokenizer(
@@ -138,10 +153,27 @@ def get_text_splitter(
     return text_splitter
 
 
-def create_custom_chunking(
+def get_semantic_text_splitter() -> HuggingFaceTextSplitter:
+    tokenizer = Tokenizer.from_pretrained("bert-base-uncased")
+
+    text_splitter = HuggingFaceTextSplitter(tokenizer, trim_chunks=True)
+    ic(type(text_splitter))
+
+    return text_splitter
+
+
+def create_langchain_chunking(
     input_chunk: str, buckslip: BuckSlip, chunk_size, overlap
 ) -> list:
-    chunking = get_text_splitter(buckslip, chunk_size, overlap).split_text(input_chunk)
+    chunking = get_langchain_text_splitter(buckslip, chunk_size, overlap).split_text(
+        input_chunk
+    )
+
+    return chunking
+
+
+def create_semantic_chunking(input_chunk: str, chunk_size) -> list:
+    chunking = get_semantic_text_splitter().chunks(input_chunk, chunk_size)
 
     return chunking
 
@@ -170,14 +202,14 @@ def build_prompt(
 
 
 async def completions_create(
-    attempt_counter: int, prompt: str, buckslip: BuckSlip
+    prompt: str, temperature: float, buckslip: BuckSlip
 ) -> types.Completion:
     if buckslip.api_client is not None:
         completion = await buckslip.api_client.completions.create(
             model=buckslip.shared_config["hf_model_id"],
             prompt=prompt,
             max_tokens=buckslip.shared_config["max_tokens"],
-            temperature=buckslip.shared_config["temperature"] + attempt_counter * 0.1,
+            temperature=temperature,
             stop=buckslip.shared_config["stop_sequence"],
         )
 
@@ -204,7 +236,8 @@ async def create_single_generation(
     completion_attempts = []
 
     while attempt_counter <= buckslip.shared_config["max_retries"]:
-        completion = await completions_create(attempt_counter, prompt, buckslip)
+        temperature = buckslip.shared_config["temperature"] + attempt_counter * 0.1
+        completion = await completions_create(prompt, temperature, buckslip)
 
         completion_finish_reason = completion.choices[0].finish_reason
 
@@ -213,9 +246,7 @@ async def create_single_generation(
                 "chunk_index": chunk_index,
                 "completion_id": completion.id,
                 "max_tokens": int(buckslip.shared_config["max_tokens"]),
-                "temperature": float(
-                    buckslip.shared_config["temperature"] + attempt_counter * 0.1
-                ),
+                "temperature": temperature,
                 "finish_reason": completion_finish_reason,
                 "completion_text": completion.choices[0].text.strip(),
                 "completion_tokens": completion.usage.completion_tokens,
@@ -257,10 +288,14 @@ def read_list_from_json_file(my_filename: str) -> list:
 
 
 async def compute_first_pass(buckslip: BuckSlip) -> list:
-    # Acquire chunks
-    # chunks = create_custom_chunking(input_text, buckslip, 1024, 102)
-    chunks = create_custom_chunking(
-        buckslip.shared_config["input_text"], buckslip, 2048, 204
+    # Langchain chunking
+    # chunks = create_langchain_chunking(
+    #     buckslip.shared_config["input_text"], buckslip, 2048, 204
+    # )
+
+    # Semantic chunking
+    chunks = create_semantic_chunking(
+        buckslip.shared_config["input_text"], 512
     )
 
     # Prepare generations
@@ -377,23 +412,32 @@ def read_input_file(input_filename: str) -> str:
     return input_text
 
 
-async def main(my_args: CommandlineArguments) -> None:
-    # Default config
-    shared_config = {
-        "api_base_url": my_args.url,
-        "hf_model_id": "",
-        "tokenizer_use_fast": True,
-        "tokenizer_is_fast": False,
-        "max_retries": 20,
-        "temperature": 0.0,
-        "max_tokens": 6000,
-        "max_keepalive_connections": 3,
-        "max_connections": 30,
-        "stop_sequence": ["ENDNOTES", "<|user|>", "\n\n\n\n"],
-    }
+def get_shared_config(my_args: CommandlineArguments) -> dict:
+    try:
+        ic(my_args.config)
+        with open(my_args.config, "r", encoding="utf-8-sig") as file:
+            shared_config = yaml.safe_load(file)
+            shared_config = shared_config["async_summarize_shared_config"]
+
+    except (IOError, OSError) as exception:
+        ic(exception)
+        ic("Exit.")
+        sys.exit(1)
+
+    shared_config["api_base_url"] = my_args.url
+
+    return shared_config
+
+
+async def get_buckslip(my_args: CommandlineArguments) -> BuckSlip:
+    # Get configuration from file
+    shared_config = get_shared_config(my_args)
 
     # Initial creation of buck slip object
     buckslip = BuckSlip(shared_config)
+
+    # Get API key from .env variable
+    buckslip.shared_config["api_key"] = get_api_key("MY_ENV_VAR")
 
     # Determine input file and read it
     buckslip.shared_config["input_text"] = read_input_file(my_args.file)
@@ -424,6 +468,13 @@ async def main(my_args: CommandlineArguments) -> None:
     ic("Buck slip")
     ic(buckslip)
 
+    return buckslip
+
+
+async def main(my_args: CommandlineArguments) -> None:
+    # Get buckslip
+    buckslip = await get_buckslip(my_args)
+
     # Do some work
     await compute_pass(buckslip, "first_pass")
 
@@ -434,11 +485,12 @@ async def main(my_args: CommandlineArguments) -> None:
     await compute_pass(buckslip, "second_pass")
 
     # Show final result
-    print(
-        buckslip.shared_config["second_pass_generations"][
-            len(buckslip.shared_config["second_pass_generations"]) - 1
-        ]["completion_text"]
-    )
+    if len(buckslip.shared_config["second_pass_generations"]) > 1:
+        print(
+            buckslip.shared_config["second_pass_generations"][
+                len(buckslip.shared_config["second_pass_generations"]) - 1
+            ]["completion_text"]
+        )
 
     # Close httpx client
     if buckslip.httpx_client is not None:
@@ -455,21 +507,28 @@ if __name__ == "__main__":
         "--url",
         type=str,
         default="http://localhost:8000/v1",
-        help="API base url (default: http://localhost:8000/v1).",
+        help="URL of OpenAI-compatible API (default: http://localhost:8000/v1).",
+    )
+    parser.add_argument(
+        "-c",
+        "--config",
+        type=str,
+        default="config.yaml",
+        help="configuration file (default config.yaml)",
     )
     parser.add_argument(
         "-p",
         "--prompt",
         type=str,
         default="prompt.yaml",
-        help="Jinja2 prompt template (default prompt.yaml)",
+        help="prompt template file (default prompt.yaml)",
     )
     parser.add_argument(
         "-f",
         "--file",
         type=str,
-        default="myfile.txt",
-        help="Input file to summarize (default: myfile.txt).",
+        default="input.txt",
+        help="input file (default: input.txt).",
     )
     parsed_args = CommandlineArguments(**vars(parser.parse_args()))
     asyncio.run(main(parsed_args))
