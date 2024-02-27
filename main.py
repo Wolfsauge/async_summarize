@@ -20,8 +20,8 @@ import yaml
 import jinja2
 import httpx
 from openai import AsyncOpenAI, types
-from transformers import AutoTokenizer, LlamaTokenizerFast  # type: ignore
-from langchain.text_splitter import TextSplitter, RecursiveCharacterTextSplitter
+# from transformers import AutoTokenizer, LlamaTokenizerFast  # type: ignore
+# from langchain.text_splitter import TextSplitter, RecursiveCharacterTextSplitter
 from semantic_text_splitter import HuggingFaceTextSplitter  # type: ignore
 from tokenizers import Tokenizer  # type: ignore
 from tqdm import tqdm  # type: ignore
@@ -43,7 +43,7 @@ class BuckSlip:
     shared_config: dict
     jinja2_env: jinja2.environment.Environment | None = None
     httpx_client: httpx.AsyncClient | None = None
-    tokenizer: LlamaTokenizerFast | None = None
+    # tokenizer: LlamaTokenizerFast | None = None
     api_client: AsyncOpenAI | None = None
 
 
@@ -109,17 +109,17 @@ async def get_hf_model_id(buckslip: BuckSlip) -> BuckSlip:
     return buckslip
 
 
-def get_tokenizer(buckslip: BuckSlip) -> BuckSlip:
-    ic("Initializing Huggingface transformers tokenizer.")
-    buckslip.tokenizer = AutoTokenizer.from_pretrained(
-        buckslip.shared_config["hf_model_id"],
-        use_fast=buckslip.shared_config["tokenizer_use_fast"],
-    )
-    tokenizer_is_fast = buckslip.tokenizer.is_fast
-    buckslip.shared_config["tokenizer_is_fast"] = buckslip.tokenizer.is_fast
-    ic(tokenizer_is_fast)
+# def get_tokenizer(buckslip: BuckSlip) -> BuckSlip:
+#     ic("Initializing Huggingface transformers tokenizer.")
+#     buckslip.tokenizer = AutoTokenizer.from_pretrained(
+#         buckslip.shared_config["hf_model_id"],
+#         use_fast=buckslip.shared_config["tokenizer_use_fast"],
+#     )
+#     tokenizer_is_fast = buckslip.tokenizer.is_fast
+#     buckslip.shared_config["tokenizer_is_fast"] = buckslip.tokenizer.is_fast
+#     ic(tokenizer_is_fast)
 
-    return buckslip
+#     return buckslip
 
 
 def get_api_key(variable_name: str) -> str | None:
@@ -144,16 +144,16 @@ def get_api_client(buckslip: BuckSlip) -> BuckSlip:
     return buckslip
 
 
-def get_langchain_text_splitter(
-    buckslip, custom_chunk_size, custom_chunk_overlap
-) -> TextSplitter:
-    text_splitter = RecursiveCharacterTextSplitter.from_huggingface_tokenizer(
-        tokenizer=buckslip.tokenizer,
-        chunk_size=custom_chunk_size,
-        chunk_overlap=custom_chunk_overlap,
-    )
+# def get_langchain_text_splitter(
+#     buckslip, custom_chunk_size, custom_chunk_overlap
+# ) -> TextSplitter:
+#     text_splitter = RecursiveCharacterTextSplitter.from_huggingface_tokenizer(
+#         tokenizer=buckslip.tokenizer,
+#         chunk_size=custom_chunk_size,
+#         chunk_overlap=custom_chunk_overlap,
+#     )
 
-    return text_splitter
+#     return text_splitter
 
 
 def get_semantic_text_splitter() -> HuggingFaceTextSplitter:
@@ -165,14 +165,14 @@ def get_semantic_text_splitter() -> HuggingFaceTextSplitter:
     return text_splitter
 
 
-def create_langchain_chunking(
-    input_chunk: str, buckslip: BuckSlip, chunk_size, overlap
-) -> list:
-    chunking = get_langchain_text_splitter(buckslip, chunk_size, overlap).split_text(
-        input_chunk
-    )
+# def create_langchain_chunking(
+#     input_chunk: str, buckslip: BuckSlip, chunk_size, overlap
+# ) -> list:
+#     chunking = get_langchain_text_splitter(buckslip, chunk_size, overlap).split_text(
+#         input_chunk
+#     )
 
-    return chunking
+#     return chunking
 
 
 def create_semantic_chunking(input_chunk: str, chunk_size: tuple) -> list:
@@ -513,8 +513,8 @@ async def get_buckslip(my_args: CommandlineArguments) -> BuckSlip:
     # Discover hf_model_id
     buckslip = await get_hf_model_id(buckslip)
 
-    # Get tokenizer based on hf_model_id
-    buckslip = get_tokenizer(buckslip)
+    # # Get tokenizer based on hf_model_id
+    # buckslip = get_tokenizer(buckslip)
 
     # Get OpenAI-compatible API client
     buckslip = get_api_client(buckslip)
