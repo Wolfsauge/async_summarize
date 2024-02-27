@@ -281,6 +281,9 @@ async def create_single_generation(
 
 def change_to_sessiondir(buckslip) -> None:
     my_sessiondir = buckslip.shared_config["sessiondir"]
+    if not Path(my_sessiondir).is_dir():
+        os.mkdir(my_sessiondir)
+    os.chdir(my_sessiondir)
 
 
 def dump_list_to_json_file(my_list: list, my_filename: str, buckslip: BuckSlip) -> None:
