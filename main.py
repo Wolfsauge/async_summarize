@@ -13,6 +13,8 @@ from pathlib import Path
 import asyncio
 
 import os
+from datetime import datetime
+
 from dotenv import load_dotenv  # type: ignore
 import yaml
 import jinja2
@@ -33,6 +35,7 @@ class CommandlineArguments:
     config: str
     prompt: str
     file: str
+    output: str
 
 
 @dataclass
@@ -276,7 +279,13 @@ async def create_single_generation(
     return last_generation_attempt, chunk_index
 
 
-def dump_list_to_json_file(my_list: list, my_filename: str) -> None:
+def change_to_sessiondir(buckslip) -> None:
+    my_sessiondir = buckslip.shared_config["sessiondir"]
+
+
+def dump_list_to_json_file(my_list: list, my_filename: str, buckslip: BuckSlip) -> None:
+    change_to_sessiondir(buckslip)
+
     with open(my_filename, "w", encoding="utf-8-sig") as json_file:
         json.dump(my_list, json_file)
     tqdm.write(f"Wrote {len(my_list)} chunks to file {my_filename}.")
@@ -296,7 +305,9 @@ async def compute_first_pass(buckslip: BuckSlip) -> list:
     # )
 
     # Semantic chunking
-    chunks = create_semantic_chunking(buckslip.shared_config["input_text"], (8192, 22000))
+    chunks = create_semantic_chunking(
+        buckslip.shared_config["input_text"], (8192, 16384)
+    )
 
     # Prepare generations
     generations: list[dict[Any, Any]]
@@ -380,7 +391,7 @@ async def compute_pass(buckslip: BuckSlip, stage: str) -> None:
             buckslip.shared_config["second_pass_generations"] = generations
 
         # Write the task results to a JSON file
-        dump_list_to_json_file(generations, output_filename)
+        dump_list_to_json_file(generations, output_filename, buckslip)
 
 
 def show_some_intermediate_results(buckslip: BuckSlip) -> None:
@@ -393,7 +404,6 @@ def show_some_intermediate_results(buckslip: BuckSlip) -> None:
 
 def read_input_file(input_filename: str) -> str:
     ic("Reading input file.")
-    ic(input_filename)
 
     try:
         with open(input_filename, "r", encoding="utf-8-sig") as input_fp:
@@ -410,6 +420,43 @@ def read_input_file(input_filename: str) -> str:
         sys.exit(1)
 
     return input_text
+
+
+def get_input_file(input_filename: str, buckslip: BuckSlip) -> BuckSlip:
+    buckslip.shared_config["input_text"] = read_input_file(input_filename)
+    buckslip.shared_config["input_filename"] = input_filename
+
+    return buckslip
+
+
+def normalize_filename(filename: str) -> str:
+    normalized_filename = os.path.basename(filename)
+    normalized_filename = normalized_filename.replace(" ", "_")
+    normalized_filename, _ = os.path.splitext(normalized_filename)
+
+    return normalized_filename
+
+
+def determine_sessiondir(buckslip: BuckSlip, output_dir: str) -> BuckSlip:
+    now_datetime = datetime.now()
+    now_isoformat = now_datetime.isoformat()
+    buckslip.shared_config["date"] = now_isoformat
+
+    my_normalized_name = normalize_filename(buckslip.shared_config["input_filename"])
+
+    output_dir = os.path.join(os.getcwd(), output_dir)
+    ic(output_dir)
+    if not Path(output_dir).is_dir():
+        print(f"ERROR: output directory {output_dir} does not exist.")
+        print("Exit.")
+        sys.exit(1)
+
+    my_workdir = str.join('-', (my_normalized_name, now_isoformat))
+    my_sessiondir = os.path.join(output_dir, my_workdir)
+
+    buckslip.shared_config["sessiondir"] = my_sessiondir
+
+    return buckslip
 
 
 def get_shared_config(my_args: CommandlineArguments) -> dict:
@@ -439,15 +486,16 @@ async def get_buckslip(my_args: CommandlineArguments) -> BuckSlip:
     # Get API key from .env variable
     buckslip.shared_config["api_key"] = get_api_key("MY_ENV_VAR")
 
-    # Determine input file and read it
-    buckslip.shared_config["input_text"] = read_input_file(my_args.file)
-
     # Get prompt_template from file
     prompt_template_filename = my_args.prompt
     buckslip.shared_config["prompt_templates"] = get_prompt_template(
         prompt_template_filename
     )
     buckslip.shared_config["prompt_template_filename"] = prompt_template_filename
+
+    # Get input file and output directory
+    buckslip = get_input_file(my_args.file, buckslip)
+    buckslip = determine_sessiondir(buckslip, my_args.output)
 
     # Get Jinja2 environment
     buckslip.jinja2_env = get_jinja2_environment()
@@ -464,9 +512,9 @@ async def get_buckslip(my_args: CommandlineArguments) -> BuckSlip:
     # Get OpenAI-compatible API client
     buckslip = get_api_client(buckslip)
 
-    # Output buck slip
-    ic("Buck slip")
-    ic(buckslip)
+    # # Output buck slip
+    # ic("Buck slip")
+    # ic(buckslip)
 
     return buckslip
 
@@ -529,6 +577,13 @@ if __name__ == "__main__":
         type=str,
         default="input.txt",
         help="input file (default: input.txt).",
+    )
+    parser.add_argument(
+        "-o",
+        "--output",
+        type=str,
+        default="output",
+        help="output directory (default: outputs/).",
     )
     parsed_args = CommandlineArguments(**vars(parser.parse_args()))
     asyncio.run(main(parsed_args))
