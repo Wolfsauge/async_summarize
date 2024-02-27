@@ -12,7 +12,9 @@ The documentation needs rework ...
 ## Example call
 
 ```
-$ ./main.py -u http://mnemosyne.local:8000/v1 -p prompt-mistral_instruct_v0.2.yaml -f mobydick.txt
+$ ./main.py -u http://localhost:8000/v1 \
+    -p prompt-mistral_instruct_v0.2.yaml \
+    -f mobydick.txt
 ```
 
 ## Example result
