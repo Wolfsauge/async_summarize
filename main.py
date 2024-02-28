@@ -8,6 +8,7 @@ import sys
 import json
 from dataclasses import dataclass
 from typing import Any
+from collections import OrderedDict
 import argparse
 from pathlib import Path
 import asyncio
@@ -243,25 +244,27 @@ async def create_single_generation(
     return last_generation_attempt, chunk_index
 
 
-def change_to_sessiondir(buckslip) -> None:
-    my_sessiondir = buckslip.shared_config["sessiondir"]
+def change_to_sessiondir(my_sessiondir) -> None:
     if not Path(my_sessiondir).is_dir():
         os.mkdir(my_sessiondir)
-    os.chdir(my_sessiondir)
+    if os.getcwd() != my_sessiondir:
+        os.chdir(my_sessiondir)
 
 
-def dump_list_to_json_file(my_list: list, my_filename: str, buckslip: BuckSlip) -> None:
-    change_to_sessiondir(buckslip)
+def dump_data_to_json_file(
+    my_data: list | dict, my_filename: str, buckslip: BuckSlip
+) -> None:
+    change_to_sessiondir(buckslip.shared_config["sessiondir"])
 
     with open(my_filename, "w", encoding="utf-8-sig") as json_file:
-        json.dump(my_list, json_file)
-    tqdm.write(f"Wrote {len(my_list)} chunks to file {my_filename}.")
+        json.dump(my_data, json_file)
+    tqdm.write(f"Wrote {len(my_data)} elements to file {my_filename}.")
 
 
 def read_list_from_json_file(my_filename: str) -> list:
     with open(my_filename, "r", encoding="utf-8-sig") as json_file:
         my_list = json.load(json_file)
-    tqdm.write(f"Loaded {len(my_list)} chunks from file {my_filename}.")
+    tqdm.write(f"Loaded {len(my_list)} elements from file {my_filename}.")
     return my_list
 
 
@@ -358,7 +361,7 @@ async def compute_pass(buckslip: BuckSlip, stage: str) -> None:
             buckslip.shared_config["second_pass_generations"] = generations
 
         # Write the task results to a JSON file
-        dump_list_to_json_file(generations, output_filename, buckslip)
+        dump_data_to_json_file(generations, output_filename, buckslip)
 
 
 def show_some_intermediate_results(buckslip: BuckSlip) -> None:
@@ -391,7 +394,7 @@ def read_input_file(input_filename: str) -> str:
 
 def get_input_file(input_filename: str, buckslip: BuckSlip) -> BuckSlip:
     buckslip.shared_config["input_text"] = read_input_file(input_filename)
-    buckslip.shared_config["input_filename"] = input_filename
+    buckslip.shared_config["input_filename"] = os.path.basename(input_filename)
 
     return buckslip
 
@@ -420,6 +423,7 @@ def determine_sessiondir(buckslip: BuckSlip, output_dir: str) -> BuckSlip:
     my_sessiondir = os.path.join(output_dir, my_workdir)
 
     buckslip.shared_config["sessiondir"] = my_sessiondir
+    buckslip.shared_config["session"] = my_workdir
 
     return buckslip
 
@@ -439,6 +443,22 @@ def get_shared_config(my_args: CommandlineArguments) -> dict:
     shared_config["api_base_url"] = my_args.url
 
     return shared_config
+
+
+def dump_buckslip(buckslip: BuckSlip) -> None:
+    change_to_sessiondir(buckslip.shared_config["sessiondir"])
+
+    exclude_keys = {"api_key", "input_text", "sessiondir"}
+    dumpslip = OrderedDict(
+        sorted(
+            {
+                k: buckslip.shared_config[k]
+                for k in set(buckslip.shared_config.keys()).difference(exclude_keys)
+            }.items()
+        )
+    )
+
+    dump_data_to_json_file(dumpslip, "buckslip.json", buckslip)
 
 
 async def get_buckslip(my_args: CommandlineArguments) -> BuckSlip:
@@ -474,9 +494,8 @@ async def get_buckslip(my_args: CommandlineArguments) -> BuckSlip:
     # Get OpenAI-compatible API client
     buckslip = get_api_client(buckslip)
 
-    # # Output buck slip
-    # ic("Buck slip")
-    # ic(buckslip)
+    # Dump buck slip
+    dump_buckslip(buckslip)
 
     return buckslip
 
@@ -496,11 +515,12 @@ async def main(my_args: CommandlineArguments) -> None:
 
     # Show final result
     if len(buckslip.shared_config["second_pass_generations"]) > 1:
-        print(
-            buckslip.shared_config["second_pass_generations"][
-                len(buckslip.shared_config["second_pass_generations"]) - 1
-            ]["completion_text"]
-        )
+        output_value = buckslip.shared_config["second_pass_generations"][
+            len(buckslip.shared_config["second_pass_generations"]) - 1
+        ]["completion_text"]
+        print(output_value)
+        with open("summary.txt", "w", encoding="utf-8") as text_file:
+            print(f"{output_value}", file=text_file)
 
     # Close httpx client
     if buckslip.httpx_client is not None:

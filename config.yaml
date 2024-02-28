@@ -11,8 +11,6 @@ async_summarize_shared_config:
     - <|user|>
     - "\n\n\n\n"
   temperature: 0.0
-  tokenizer_is_fast: false
-  tokenizer_use_fast: true
   semantic_splitter_model: bert-base-uncased
   semantic_splitter_lo_threshold: 8192
   semantic_splitter_hi_threshold: 16384
