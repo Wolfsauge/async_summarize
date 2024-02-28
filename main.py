@@ -11,7 +11,6 @@ from typing import Any
 import argparse
 from pathlib import Path
 import asyncio
-
 import os
 from datetime import datetime
 
@@ -127,8 +126,10 @@ def get_api_client(buckslip: BuckSlip) -> BuckSlip:
     return buckslip
 
 
-def get_semantic_text_splitter() -> HuggingFaceTextSplitter:
-    tokenizer = Tokenizer.from_pretrained("bert-base-uncased")
+def get_semantic_text_splitter(buckslip: BuckSlip) -> HuggingFaceTextSplitter:
+    tokenizer = Tokenizer.from_pretrained(
+        buckslip.shared_config["semantic_splitter_model"]
+    )
 
     text_splitter = HuggingFaceTextSplitter(tokenizer, trim_chunks=True)
     ic(type(text_splitter))
@@ -136,8 +137,10 @@ def get_semantic_text_splitter() -> HuggingFaceTextSplitter:
     return text_splitter
 
 
-def create_semantic_chunking(input_chunk: str, chunk_size: tuple) -> list:
-    chunking = get_semantic_text_splitter().chunks(
+def create_semantic_chunking(
+    input_chunk: str, chunk_size: tuple, buckslip: BuckSlip
+) -> list:
+    chunking = get_semantic_text_splitter(buckslip).chunks(
         input_chunk, chunk_capacity=chunk_size
     )
 
@@ -270,6 +273,7 @@ async def compute_first_pass(buckslip: BuckSlip) -> list:
             buckslip.shared_config["semantic_splitter_lo_threshold"],
             buckslip.shared_config["semantic_splitter_hi_threshold"],
         ),
+        buckslip,
     )
 
     # Prepare generations
@@ -410,9 +414,7 @@ def determine_sessiondir(buckslip: BuckSlip, output_dir: str) -> BuckSlip:
     output_dir = os.path.join(os.getcwd(), output_dir)
     ic(output_dir)
     if not Path(output_dir).is_dir():
-        print(f"ERROR: output directory {output_dir} does not exist.")
-        print("Exit.")
-        sys.exit(1)
+        os.mkdir(output_dir)
 
     my_workdir = str.join("-", (my_normalized_name, now_isoformat))
     my_sessiondir = os.path.join(output_dir, my_workdir)
@@ -543,7 +545,7 @@ if __name__ == "__main__":
         "--output",
         type=str,
         default="output",
-        help="output directory (default: outputs/).",
+        help="output directory (default: ./output).",
     )
     parsed_args = CommandlineArguments(**vars(parser.parse_args()))
     asyncio.run(main(parsed_args))
